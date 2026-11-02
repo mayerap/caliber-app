@@ -469,7 +469,23 @@
     else schedule(500);
   });
   window.addEventListener('offline', () => { err = 'offline'; emit(); });
-  document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); });
+  // Back in front: another device may have changed things, so pull them and reload the app on the new data,
+  // unless a workout is in progress (it picks them up when it finishes). At most once a minute.
+  let lastResumePull = 0;
+  async function pullOnResume() {
+    const id = uid();
+    if (!id || !booted || !state.hydrated || state.owner !== id || !navigator.onLine) return;
+    if (Date.now() - lastResumePull < 60000) return;
+    lastResumePull = Date.now();
+    try {
+      await flush();
+      if (dirty.size) return;                         // local changes still unsent: the next launch merges them
+      const n = await pullChanges(id);
+      if (n && localStorage.getItem(P + 'workout') == null) location.reload();
+      else emit();
+    } catch (e) { /* offline or slow: the next launch syncs */ }
+  }
+  document.addEventListener('visibilitychange', () => { if (document.hidden) flush(); else pullOnResume(); });
 
   window.caliberSync = {
     boot, mark, markAll, flush, importBackup,

@@ -337,12 +337,13 @@
   }
 
   async function signOut(close) {
-    if (NATIVE) { close(); clearDevices(); await sb.auth.signOut(); return; }
-    // A browser may be a shared computer: signing out also clears this browser's copy (the account keeps everything)
+    // Signing out also clears this device's copy (a browser may be a shared computer, a phone may be handed on);
+    // the account keeps everything and it comes back on the next sign-in
     await window.caliberSync?.flush().catch(() => {});
     const left = window.caliberSync?.status().pending || 0;
     if (left && !confirm(`${left} change${left === 1 ? ' hasn’t' : 's haven’t'} synced to your account yet and will be lost. Sign out anyway?`)) return;
     close();
+    clearDevices();                                       // the Watch, widgets and Lock Screen stop showing this account
     await sb.auth.signOut().catch(() => {});
     clearLocal();
   }
