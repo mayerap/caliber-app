@@ -1,0 +1,251 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Caliber – Admin</title>
+<link rel="icon" href="icon-32.png" sizes="32x32">
+<link href="fonts/fonts.css" rel="stylesheet">
+<!-- The owner's admin page (docs/admin.md). Uses the web app's own sign-in (same browser), and reads everything
+     through admin_overview() / admin_set_access() in supabase/migrations/20261104000000_admin.sql, which refuse
+     anyone not listed in public.admins. build-companion.mjs fills in the Supabase config below. -->
+<style>
+  :root {
+    --bg:#F2F3F5; --surface:#FFFFFF; --raised:#F6F7F9; --line:#E1E4E9; --text:#161A21; --muted:#5F6775; --faint:#9AA1AD;
+    --accent:#E8740C; --accent-ink:#14110E; --good:#23935F; --warn:#B7830F; --bad:#D93B3B;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+    --bg:#171A20; --surface:#1F232B; --raised:#272C36; --line:#313744; --text:#EEEBE5; --muted:#9097A4; --faint:#5F6674;
+    --accent:#FF8A1F; --good:#2FA36B; --warn:#EDB935; --bad:#E04848; color-scheme: dark; } }
+  :root[data-theme="dark"] {
+    --bg:#171A20; --surface:#1F232B; --raised:#272C36; --line:#313744; --text:#EEEBE5; --muted:#9097A4; --faint:#5F6674;
+    --accent:#FF8A1F; --good:#2FA36B; --warn:#EDB935; --bad:#E04848; color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 'Inter Tight', system-ui, -apple-system, sans-serif;
+         padding: env(safe-area-inset-top, 0) 0 env(safe-area-inset-bottom, 0); }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 20px 16px 48px; }
+  header { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+  .brand { font: 800 22px/1 'Big Shoulders Display', 'Arial Narrow', sans-serif; letter-spacing: .04em; display: flex; align-items: center; gap: 8px; }
+  .brand svg { width: 22px; height: 22px; }
+  .brand small { font: 600 13px/1 'Inter Tight', sans-serif; letter-spacing: 0; color: var(--muted); padding: 3px 8px; border: 1px solid var(--line); border-radius: 99px; }
+  header .spacer { flex: 1; }
+  .updated { color: var(--muted); font-size: 13px; }
+  button { font: inherit; cursor: pointer; border: 0; border-radius: 10px; padding: 8px 14px; font-weight: 650; }
+  .ghost { background: var(--surface); color: var(--text); border: 1px solid var(--line); }
+  .primary { background: var(--accent); color: var(--accent-ink); }
+  .danger { background: transparent; color: var(--bad); border: 1px solid var(--line); }
+  button:disabled { opacity: .55; cursor: default; }
+  h2 { font: 700 13px/1.2 'Inter Tight', sans-serif; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 28px 0 10px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 16px; }
+  .tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  @media (min-width: 720px) { .tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+  .tile { padding: 14px 16px; }
+  .tile .label { color: var(--muted); font-size: 13px; }
+  .tile .value { font: 700 30px/1.1 'Barlow Semi Condensed', 'Inter Tight', sans-serif; margin-top: 4px; font-variant-numeric: tabular-nums; }
+  .tile .sub { color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+  .tile.attention { border-color: var(--accent); }
+  .chart { padding: 16px; }
+  .chart .title { font-weight: 650; }
+  .chart .note { color: var(--muted); font-size: 13px; }
+  .bars { position: relative; display: flex; align-items: flex-end; gap: 6px; height: 140px; margin-top: 14px; border-bottom: 1px solid var(--line); }
+  .bar { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; position: relative; }
+  .bar i { display: block; width: 100%; max-width: 26px; margin: 0 auto; background: var(--accent); border-radius: 4px 4px 0 0; min-height: 0; }
+  .bar.zero i { background: none; }
+  .bar:hover i, .bar:focus i { filter: brightness(1.12); }
+  .bar .tip { position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); white-space: nowrap; background: var(--text); color: var(--bg);
+              font-size: 12px; padding: 4px 8px; border-radius: 6px; pointer-events: none; opacity: 0; transition: opacity .1s; z-index: 2; }
+  .bar:hover .tip, .bar:focus .tip { opacity: 1; }
+  .axis { display: flex; gap: 6px; margin-top: 6px; color: var(--faint); font-size: 11px; }
+  .axis span { flex: 1; text-align: center; overflow: hidden; }
+  .pending { padding: 4px 0; }
+  .pending .row { display: flex; align-items: center; gap: 10px; padding: 10px 16px; flex-wrap: wrap; }
+  .pending .row + .row { border-top: 1px solid var(--line); }
+  .pending .who { flex: 1 1 200px; min-width: 0; }
+  .pending .who b { display: block; overflow-wrap: anywhere; }
+  .pending .who span { color: var(--muted); font-size: 13px; }
+  .empty { padding: 14px 16px; color: var(--muted); }
+  .tools { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 10px; }
+  .tools input { flex: 1 1 220px; font: inherit; padding: 9px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text); }
+  .note { color: var(--muted); font-size: 13px; }
+  .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { border-collapse: collapse; width: 100%; min-width: 880px; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; white-space: nowrap; }
+  th { color: var(--muted); font-weight: 650; font-size: 12.5px; cursor: pointer; user-select: none; position: sticky; top: 0; background: var(--surface); }
+  th[aria-sort] { color: var(--text); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td .email { font-weight: 600; white-space: normal; overflow-wrap: anywhere; min-width: 190px; max-width: 260px; display: block; }
+  td .nick { color: var(--muted); font-size: 12.5px; }
+  tr:last-child td { border-bottom: 0; }
+  .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 650; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); }
+  .pill::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--faint); }
+  .pill.approved::before { background: var(--good); } .pill.pending::before { background: var(--warn); } .pill.denied::before { background: var(--bad); }
+  .muted { color: var(--muted); }
+  .center { max-width: 420px; margin: 18vh auto 0; padding: 28px 24px; text-align: center; }
+  .center h1 { font: 800 28px/1.1 'Big Shoulders Display', 'Arial Narrow', sans-serif; text-transform: uppercase; margin: 0 0 8px; }
+  .center p { color: var(--muted); margin: 0 0 18px; }
+  .center a.primary { display: inline-block; text-decoration: none; border-radius: 10px; padding: 10px 18px; font-weight: 700; }
+  .waitlist div { padding: 9px 16px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .waitlist div + div { border-top: 1px solid var(--line); }
+</style>
+</head>
+<body>
+<div class="wrap" id="root"><p class="muted">Loading…</p></div>
+<script src="vendor/supabase.js"></script>
+<script>
+(() => {
+  const CFG = {"url":"https://xbapjmnnsnkaxelldkpl.supabase.co","publishableKey":"sb_publishable_FBcN60xU0nqNnNcfLijWGA_VDTeQEMU"};
+  // same client settings as shell/auth.js on the web, so this page shares the app's sign-in
+  const sb = window.supabase.createClient(CFG.url, CFG.publishableKey, {
+    auth: { flowType: 'pkce', persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+  });
+  const root = document.getElementById('root');
+  const MARK = '<svg viewBox="0 0 100 100" aria-hidden="true"><path d="M80.95 77.87A41.65 41.65 0 1 1 80.95 22.13" fill="none" stroke="currentColor" stroke-width="16.7"/><circle cx="50" cy="50" r="19.3" fill="#FF8A1F"/></svg>';
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const DAY = 864e5;
+  const ago = iso => {
+    if (!iso) return '—';
+    const d = (Date.now() - new Date(iso)) / DAY;
+    if (d < 1 / 24) return 'just now';
+    if (d < 1) return `${Math.round(d * 24)}h ago`;
+    if (d < 30) return `${Math.round(d)}d ago`;
+    return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: d > 300 ? 'numeric' : undefined });
+  };
+  const date = iso => iso ? new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '—';
+  const within = (iso, days) => iso && Date.now() - new Date(iso) < days * DAY;
+  const PROVIDER = { email: 'Email link', google: 'Google', apple: 'Apple' };
+  const VIA = { ios: 'iPhone', web: 'Web', existing: 'Before approvals' };
+
+  function centered(title, text, link) {
+    root.innerHTML = `<div class="card center"><h1>${esc(title)}</h1><p>${esc(text)}</p>${link ? `<a class="primary" href="${link[1]}">${esc(link[0])}</a>` : ''}</div>`;
+  }
+
+  let data = null, sortKey = 'last_active', sortDir = -1, query = '';
+
+  async function load() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return centered('Admin', 'Sign in to Caliber in this browser first, with your own account. Then come back to this page.', ['Open Caliber', './']);
+    let res;
+    try { res = await sb.rpc('admin_overview'); } catch (e) { res = { error: e }; }
+    if (res.error) {
+      const m = `${res.error.code} ${res.error.message}`;
+      if (/not_admin/.test(m)) return centered('Not an admin', `${session.user.email} isn’t on the admin list. Sign in with your owner account.`, ['Open Caliber', './']);
+      if (/PGRST202|admin_overview/.test(m)) return centered('Not set up yet', 'The admin functions aren’t in the database yet. Run supabase/migrations/20261104000000_admin.sql.');
+      return centered('Can’t load', res.error.message || 'Check your connection and reload.');
+    }
+    data = res.data;
+    render(session);
+  }
+
+  function tile(label, value, sub, attention) {
+    return `<div class="card tile${attention ? ' attention' : ''}"><div class="label">${esc(label)}</div><div class="value">${esc(value)}</div>${sub ? `<div class="sub">${esc(sub)}</div>` : ''}</div>`;
+  }
+
+  // Sign-ups per week, last 12 weeks (weeks start Monday)
+  function weeks(users) {
+    const start = d => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
+    const now = start(Date.now()), out = [];
+    for (let i = 11; i >= 0; i--) { const s = new Date(now); s.setDate(s.getDate() - i * 7); out.push({ start: s, n: 0 }); }
+    for (const u of users) { const s = start(u.created_at).getTime(); const w = out.find(o => o.start.getTime() === s); if (w) w.n++; }
+    return out;
+  }
+
+  function render(session) {
+    const users = data.users;
+    const pending = users.filter(u => u.access === 'pending');
+    const active7 = users.filter(u => within(u.last_active, 7)).length, active30 = users.filter(u => within(u.last_active, 30)).length;
+    const new7 = users.filter(u => within(u.created_at, 7)).length;
+    const never = users.filter(u => !u.confirmed).length;
+    const wk = weeks(users), max = Math.max(1, ...wk.map(w => w.n));
+    root.innerHTML = `
+      <header>
+        <div class="brand">${MARK}CALIBER <small>Admin</small></div>
+        <div class="spacer"></div>
+        <span class="updated">Updated ${ago(data.generated_at)}</span>
+        <button class="ghost" id="refresh">Refresh</button>
+      </header>
+      <div class="tiles">
+        ${tile('Accounts', users.length, `${new7} new this week`)}
+        ${tile('Active, last 7 days', active7, `${active30} in the last 30 days`)}
+        ${tile('Workouts, last 7 days', data.workouts_7d, `${data.workouts_total} logged in all`)}
+        ${tile('Waiting for approval', pending.length, pending.length ? 'Web sign-ups, below' : 'Nobody waiting', pending.length > 0)}
+        ${tile('Never signed in', never, 'Asked for a link, never tapped it')}
+        ${tile('Food entries', data.food_total, 'All time')}
+        ${tile('Claude requests', data.ai_30d, 'Last 30 days')}
+        ${tile('Waitlist', data.waitlist.length, `${data.requests_open} open exercise ${data.requests_open === 1 ? 'request' : 'requests'}`)}
+      </div>
+
+      <h2>Sign-ups by week</h2>
+      <div class="card chart">
+        <div class="title">New accounts per week</div><div class="note">Last 12 weeks, weeks start Monday. Hover or tap a bar for the count.</div>
+        <div class="bars" role="img" aria-label="New accounts per week, last 12 weeks">
+          ${wk.map(w => `<div class="bar${w.n ? '' : ' zero'}" tabindex="0"><i style="height:${(w.n / max) * 100}%"></i><span class="tip">Week of ${date(w.start)}: ${w.n} ${w.n === 1 ? 'account' : 'accounts'}</span></div>`).join('')}
+        </div>
+        <div class="axis">${wk.map((w, i) => `<span>${i % 2 ? '' : date(w.start)}</span>`).join('')}</div>
+      </div>
+
+      <h2>Waiting for approval</h2>
+      ${pending.length ? '<p class="note">Approving here lets them in the next time they open Caliber, but doesn’t email them. The Approve link in your email does both.</p>' : ''}
+      <div class="card pending">${pending.length ? pending.map(u => `
+        <div class="row" data-id="${esc(u.id)}">
+          <div class="who"><b>${esc(u.email)}</b><span>Asked ${ago(u.requested_at || u.created_at)} · ${esc(PROVIDER[u.provider] || u.provider)}</span></div>
+          <button class="primary" data-act="approved">Approve</button><button class="danger" data-act="denied">Deny</button>
+        </div>`).join('') : '<div class="empty">Nobody is waiting. New web sign-ups appear here and in your email.</div>'}
+      </div>
+
+      <h2>Accounts</h2>
+      <div class="tools"><input id="q" type="search" placeholder="Search email or nickname" value="${esc(query)}" aria-label="Search accounts"></div>
+      <p class="note">Plan: payments aren’t set up yet, so every account is on the free beta. This column will show each person’s subscription once in-app purchases are live.</p>
+      <div class="card scroll"><table>
+        <thead><tr>
+          ${[['email', 'Account'], ['provider', 'Signs in with'], ['access', 'Web access'], ['plan', 'Plan'], ['created_at', 'Joined'], ['last_active', 'Last active'],
+             ['workouts_30d', 'Workouts, 30 days', 1], ['workouts', 'Workouts, all', 1], ['food', 'Food', 1], ['weigh_ins', 'Weigh-ins', 1], ['friends', 'Friends', 1]]
+            .map(([k, l, n]) => `<th data-k="${k}"${n ? ' class="num"' : ''}${sortKey === k ? ` aria-sort="${sortDir > 0 ? 'ascending' : 'descending'}"` : ''}>${l}${sortKey === k ? (sortDir > 0 ? ' ↑' : ' ↓') : ''}</th>`).join('')}
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table></div>
+
+      <h2>Waitlist</h2>
+      <div class="card waitlist">${data.waitlist.length ? data.waitlist.map(w => `<div><span>${esc(w.email)}</span><span class="muted">${esc(w.source || '')} · ${date(w.created_at)}</span></div>`).join('') : '<div class="empty">No one on the waitlist yet.</div>'}</div>
+      <p class="note" style="margin-top:24px">Signed in as ${esc(session.user.email)}. This page is only visible to accounts on the admin list.</p>`;
+    table();
+    document.getElementById('refresh').onclick = load;
+    document.getElementById('q').oninput = e => { query = e.target.value; table(); };
+    root.querySelectorAll('th[data-k]').forEach(th => th.onclick = () => {
+      const k = th.dataset.k; if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = /email|provider|access|plan/.test(k) ? 1 : -1; }
+      render(session);
+    });
+    root.querySelectorAll('.pending button').forEach(b => b.onclick = () => decide(b));
+  }
+
+  function table() {
+    const q = query.trim().toLowerCase();
+    const val = (u, k) => k === 'plan' ? 'beta' : k === 'access' ? (u.access || '') : u[k] ?? '';
+    const rows = data.users.filter(u => !q || `${u.email} ${u.nickname || ''}`.toLowerCase().includes(q))
+      .sort((a, b) => { const x = val(a, sortKey), y = val(b, sortKey); return (x > y ? 1 : x < y ? -1 : 0) * sortDir; });
+    document.getElementById('tbody').innerHTML = rows.map(u => `<tr>
+      <td><span class="email">${esc(u.email || '(no email)')}</span>${u.nickname ? `<span class="nick">${esc(u.nickname)}</span>` : ''}${u.is_admin ? ' <span class="nick">· admin</span>' : ''}</td>
+      <td>${esc(PROVIDER[u.provider] || u.provider)}<div class="nick">${esc(VIA[u.via] || '')}</div></td>
+      <td>${u.access ? `<span class="pill ${esc(u.access)}">${esc(u.access[0].toUpperCase() + u.access.slice(1))}</span>` : '<span class="muted">—</span>'}</td>
+      <td>Free beta</td>
+      <td>${date(u.created_at)}</td>
+      <td>${u.confirmed ? ago(u.last_active) : '<span class="muted">Never signed in</span>'}</td>
+      <td class="num">${u.workouts_30d}</td><td class="num">${u.workouts}</td><td class="num">${u.food}</td><td class="num">${u.weigh_ins}</td><td class="num">${u.friends}</td>
+    </tr>`).join('') || '<tr><td colspan="11" class="muted">No accounts match.</td></tr>';
+  }
+
+  async function decide(btn) {
+    const row = btn.closest('.row'), status = btn.dataset.act;
+    row.querySelectorAll('button').forEach(b => b.disabled = true);
+    let res;
+    try { res = await sb.rpc('admin_set_access', { target: row.dataset.id, new_status: status }); } catch (e) { res = { error: e }; }
+    if (res.error) { row.querySelectorAll('button').forEach(b => b.disabled = false); return alert(`Couldn’t save: ${res.error.message}`); }
+    load();
+  }
+
+  load();
+})();
+</script>
+</body>
+</html>
