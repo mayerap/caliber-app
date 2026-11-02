@@ -88,8 +88,76 @@
     gate.classList.add('cs-out');
     const g = gate; gate = null;
     setTimeout(() => g.remove(), 260);
-    document.documentElement.classList.remove('cs-locked');
+    if (!hold) document.documentElement.classList.remove('cs-locked');
   }
+
+  // ---------- web approval: a new web account waits until the owner approves it ----------
+  // docs/web-companion.md "Who can get in"; table, rules and caliber_access() in
+  // supabase/migrations/20261103000000_web_access.sql; the owner's email from supabase/functions/web-access.
+  // The iPhone app reports itself so its people are never held, and can use the web straight away.
+  const ACCESS = 'calibre-access:';                       // + user id; not a calibre: key, so it never syncs
+  let hold = null;
+  async function admit(s) {
+    const uid = s.user.id;
+    if (NATIVE) {
+      hideGate();
+      if (localStorage.getItem(ACCESS + uid) !== 'approved')
+        sb.rpc('caliber_access', { platform: 'ios' }).then(r => { if (r.data === 'approved') localStorage.setItem(ACCESS + uid, 'approved'); }, () => {});
+      return;
+    }
+    const known = localStorage.getItem(ACCESS + uid);
+    if (known === 'approved') { hideGate(); hideHold(); } else showHold('checking', s);
+    const { data, error } = await sb.rpc('caliber_access', { platform: 'web' }).catch(e => ({ error: e }));
+    if (session?.user?.id !== uid) return;                // signed out meanwhile
+    if (error) {
+      // the server doesn't have the approval step yet: let people in rather than lock everyone out
+      if (/PGRST202|42883|caliber_access/.test(`${error.code} ${error.message}`)) { hideGate(); return hideHold(); }
+      if (known === 'approved') return;                   // offline: trust the last answer
+      return showHold('offline', s);
+    }
+    localStorage.setItem(ACCESS + uid, data);
+    if (data === 'approved') { hideGate(); return hideHold(); }
+    showHold(data, s);
+    if (data === 'pending') fetch(`${CFG.url}/functions/v1/web-access`, {   // emails the owner, once per person
+      method: 'POST',
+      headers: { Authorization: `Bearer ${s.access_token}`, apikey: CFG.publishableKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'notify' }),
+    }).catch(() => {});
+  }
+  function showHold(kind, s) {
+    if (window.__caliberPreview) return;
+    if (!document.body) return document.addEventListener('DOMContentLoaded', () => showHold(kind, s), { once: true });
+    hideGate();
+    const email = s.user.email || 'your email';
+    const [title, text] = {
+      checking: ['One moment', 'Checking your access…'],
+      pending: ['You’re on the list', `Caliber on the web is invite-only for now. We’ll email ${email} as soon as you’re approved. Using the iPhone beta? Sign in there once with this account and you’re in here too.`],
+      denied: ['Not approved', `${email} isn’t approved for Caliber on the web. Questions? Email amayer@caliberperpetual.com.`],
+      offline: ['Can’t reach Caliber', 'Check your connection, then try again.'],
+    }[kind] || ['One moment', ''];
+    if (!hold) {
+      const again = h('button', { class: 'cs-btn cs-accent', onclick: () => session && admit(session) }, h('span', { class: 'cs-label' }, 'Check again'));
+      const out = h('button', { class: 'cs-btn cs-ghost', onclick: async () => { await sb.auth.signOut().catch(() => {}); clearLocal(); } }, h('span', { class: 'cs-label' }, 'Sign out'));
+      hold = h('div', { class: 'cs-gate', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Caliber access' },
+        h('div', { class: 'cs-inner' },
+          h('div', { class: 'cs-brand' }, mark(), h('span', { class: 'cs-word' }, 'ALIBER')),
+          h('h1', { class: 'cs-h1' }), h('p', { class: 'cs-sub' }), h('div', { class: 'cs-stack' }, again, out)));
+      document.body.append(hold);
+      document.documentElement.classList.add('cs-locked');
+    }
+    hold.querySelector('.cs-h1').textContent = title;
+    hold.querySelector('.cs-sub').textContent = text;
+    hold.querySelector('.cs-stack').hidden = kind === 'checking';
+  }
+  function hideHold() {
+    if (!hold) return;
+    hold.classList.add('cs-out');
+    const g = hold; hold = null;
+    setTimeout(() => g.remove(), 260);
+    if (!gate) document.documentElement.classList.remove('cs-locked');
+  }
+  // coming back after the approval email: look again
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && hold && session) admit(session); });
 
   async function withEmail(address, btn) {
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(address)) return setGateMessage('Enter a full email address.', 'warn');
@@ -296,7 +364,9 @@
 
   sb.auth.onAuthStateChange((event, s) => {
     session = s;
-    if (s) hideGate(); else showGate();
+    if (!s) { hideHold(); showGate(); }
+    else if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') admit(s);
+    else if (!hold) hideGate();
     document.dispatchEvent(new CustomEvent('caliber:auth', { detail: { event, signedIn: !!s } }));
   });
   AppPlugin?.addListener('appUrlOpen', e => finishRedirect(e.url));
