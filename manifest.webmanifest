@@ -1,0 +1,32 @@
+{
+  "id": "/",
+  "name": "Caliber",
+  "short_name": "Caliber",
+  "description": "Strength training, conditioning and food logging that syncs with the Caliber iPhone app.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#171A20",
+  "theme_color": "#171A20",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Caliber Privacy Policy</title>
+<!-- Caliber's privacy policy (CALIBER_HANDOFF.md 11). Bundled in the app (www/privacy.html) and meant to be
+     hosted at a public URL for the App Store listing. Keep it in step with what the app actually does. -->
+<link rel="stylesheet" href="fonts/fonts.css">
+<script>
+  // shown inside the app: match the app's light or dark theme (?theme=dark|light)
+  const t = new URLSearchParams(location.search).get('theme');
+  if (t) { document.documentElement.dataset.theme = t; document.documentElement.classList.add('embedded'); }
+</script>
+<style>
+  :root{--bg:#E9E6E1;--surface:#F7F5F1;--text:#17161A;--muted:#5E5A55;--line:rgba(0,0,0,.1);--accent:#A94C07}
+  @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0C0D0F;--surface:#16181B;--text:#F2EFE9;--muted:#9A9EA5;--line:rgba(255,255,255,.09);--accent:#FF8A1F}}
+  :root[data-theme="dark"]{--bg:#0C0D0F;--surface:#16181B;--text:#F2EFE9;--muted:#9A9EA5;--line:rgba(255,255,255,.09);--accent:#FF8A1F}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 -apple-system,BlinkMacSystemFont,"Inter Tight","Segoe UI",sans-serif;-webkit-text-size-adjust:100%}
+  main{max-width:680px;margin:0 auto;padding:calc(env(safe-area-inset-top,0px) + 32px) 20px calc(env(safe-area-inset-bottom,0px) + 48px)}
+  .embedded main{padding:20px 18px 32px}
+  h1{font:800 40px/1 "Big Shoulders Display",-apple-system,sans-serif;text-transform:uppercase;letter-spacing:.01em;margin:0 0 8px}
+  h2{font-size:19px;margin:32px 0 8px}
+  p,li{color:var(--text)}
+  .muted{color:var(--muted)}
+  ul{padding-left:20px}
+  li{margin:6px 0}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:15px;background:var(--surface);border-radius:12px;overflow:hidden}
+  th,td{text-align:left;padding:10px 12px;border-top:1px solid var(--line);vertical-align:top}
+  th{font-size:13px;color:var(--muted);font-weight:600;border-top:0}
+  a{color:var(--accent)}
+</style>
+</head>
+<body>
+<main>
+<h1>Privacy Policy</h1>
+<p class="muted">Caliber · Last updated November 1, 2026</p>
+
+<p>Caliber is a strength-training app for iPhone and Apple Watch. This policy explains what Caliber stores, why, who else handles it, and how you can export or delete it. In short: your data is used only to run Caliber for you. It is never sold, never used for advertising, and never shared with anyone except the services that keep Caliber running.</p>
+
+<h2>What Caliber stores</h2>
+<table>
+  <tr><th>Data</th><th>Why</th></tr>
+  <tr><td>Your account: email address, and your name if you sign in with Google or Apple</td><td>To sign you in and keep your data in your account</td></tr>
+  <tr><td>Training: programs, workouts, sets, effort ratings, readiness check-ins, notes</td><td>Logging, history, progress and autoregulated loads</td></tr>
+  <tr><td>Body and nutrition: body weight, foods, water, caffeine, fasting, nutrition targets</td><td>Trends, targets and the nutrition features</td></tr>
+  <tr><td>Profile details you enter (for example age, height, sex) and settings</td><td>Calorie estimates and how the app behaves</td></tr>
+  <tr><td>Progress photos you add</td><td>Your check-ins; stored privately so only you can see them</td></tr>
+  <tr><td>Heart rate average and maximum for workouts recorded on Apple Watch</td><td>Shown with that workout in your history</td></tr>
+  <tr><td>The time of each AI food request</td><td>To limit requests per hour; nothing else is kept about the request</td></tr>
+</table>
+<p>Your data is kept on your devices and in your Caliber account so it stays in step across your iPhone and Apple Watch and survives reinstalling the app.</p>
+
+<h2>Apple Health</h2>
+<ul>
+  <li>During a workout on Apple Watch, Caliber reads your heart rate and active energy to show them live, and saves the finished workout (with heart rate and active energy) to Apple Health.</li>
+  <li>During a cardio session on Apple Watch or iPhone, Caliber also reads the distance you covered, to fill in your log. Strength and cardio sessions you finish are saved to Apple Health as workouts.</li>
+  <li>For your daily readiness check-in, Caliber reads last night's sleep and, if you connect Apple Health for readiness, your heart rate variability, resting heart rate, breathing rate and sleeping temperature, from your Apple Watch or any tracker that writes them to Apple Health (such as Oura or Whoop). It compares them with your own recent readings on your iPhone.</li>
+  <li>Only a workout's average and maximum heart rate, time in your target zone and distance leave your devices, as part of that session in your Caliber account, plus the sleep score and body score Caliber calculates for your check-in (and the name of the tracker they came from). Your sleep stages and recovery readings themselves are never uploaded.</li>
+  <li>Health data is never used for advertising or marketing, never sold, and never shared with third parties.</li>
+  <li>You can change Caliber's Health access at any time in the Health app, or on Apple Watch in Settings → Health.</li>
+</ul>
+
+<h2>Location (optional)</h2>
+<ul>
+  <li>If you train at both a gym and home, you can save each spot in Settings. When you open Caliber on a lift day, the iPhone app checks your location once and suggests the matching equipment.</li>
+  <li>Your saved spots and that location check stay on your iPhone. They are never uploaded, synced or shared.</li>
+  <li><b>Outdoor sessions:</b> when you start an outdoor run, walk, hike or ride, Caliber follows GPS on your iPhone or Apple Watch while the session runs, including with the screen locked, to measure distance, pace and your route. If you allow Motion &amp; Fitness, it also reads the barometer during the session to measure how much you climb. It stops when the session ends and doesn't follow your location at any other time. The route, with its climb and height profile, is saved with that session in your history and backed up to your account like your other workouts, and saved with the workout in Apple Health if you've allowed that. Your friends see a route only if you turn on sharing for that session. Deleting the session deletes its route.</li>
+  <li><b>Maps:</b> in the iPhone app, routes are drawn on an Apple Maps map. To draw it, the iPhone asks Apple Maps for the map of the area around the route, the same way any map app does. Your account and the route itself aren't sent.</li>
+  <li>You can remove saved spots in Settings, or turn location off for Caliber in iPhone Settings → Caliber → Location.</li>
+</ul>
+
+<h2>AI food estimates</h2>
+<p>When you use Estimate, Describe a meal or a meal photo, the text or photo you provide is sent from our server to Anthropic, which runs the Claude AI model, to work out the foods and nutrition. Caliber does not keep the photo or text after the answer comes back; only the foods you choose to add are saved to your log. Anthropic handles this under its commercial terms and privacy policy. These features are optional; you can always add foods yourself.</p>
+
+<h2>Friends</h2>
+<p>Friends is optional and off until you set it up. When you do, you choose a display name, and you can turn each of these on or off at any time:</p>
+<ul>
+<li><b>Share my stats:</b> your friends see a summary of your training: number of workouts, training time, volume lifted, how your sets split across muscle groups, and your best lifts.</li>
+<li><b>Post my workouts:</b> your friends see each workout or cardio session you finish: its name, length, sets, volume, distance, climb and any PRs or milestones. Turning this off removes the ones already posted.</li>
+<li><b>Findable by name:</b> other Caliber users can find your display name in search and send you a friend request. With it off, people can only add you with your invite code.</li>
+</ul>
+<p>Only people who are your friends can see your stats and workouts. You become friends when someone uses your invite code or link, or when you accept their request. Anyone with your invite code can add you; you can make a new code at any time, which stops the old one working. Friends can react to your workouts, and you can remove a friend at any time. Your body weight, food, notes, photos and videos are never shared. Display names are checked against a list of offensive words. Deleting your account deletes your friends, requests, posts and reactions.</p>
+
+<h2>Exercise requests</h2>
+<p>When you add your own exercise and leave "Ask for it in the library" on, Caliber sends us its name, the muscle and equipment you chose and any note you write, linked to your account, so we can consider adding it to the library. Only Caliber's team can read requests. Turn the switch off to keep an exercise to yourself. Deleting your account deletes your requests.</p>
+
+<h2>Launch list</h2>
+<p>If you sign up for launch news on caliberperpetual.com, we keep only your email address, to send you news about Caliber's launch. It is stored with our database provider (Supabase), never sold or shared, and you can ask to be removed at any time by emailing <a href="mailto:privacy@caliberperpetual.com">privacy@caliberperpetual.com</a>.</p>
+
+<h2>Who handles your data</h2>
+<ul>
+  <li><b>Supabase</b> hosts your account, data and photos, encrypted in transit (HTTPS) and protected so each account can only reach its own data.</li>
+  <li><b>Anthropic</b> processes food text and photos for the AI features, as described above.</li>
+  <li><b>Google</b> or <b>Apple</b> confirm who you are if you choose to sign in with them.</li>
+  <li><b>Apple</b> stores the workouts Caliber saves to Apple Health, under your control, and Apple Maps provides the maps under your routes.</li>
+</ul>
+<p>Caliber has no advertising, no analytics trackers, and no data brokers, and does not track you across other apps or websites.</p>
+
+<h2>Exporting and deleting your data</h2>
+<ul>
+  <li><b>Export:</b> Profile → Back up your data saves everything as a file you keep. You can also export workouts and food logs as CSV.</li>
+  <li><b>Delete:</b> Profile → Account → Delete account permanently deletes your account, all of your data and your photos from our systems. Workouts already saved to Apple Health stay in Health, where you can delete them yourself.</li>
+</ul>
+
+<h2>Children</h2>
+<p>Caliber is not meant for children under 13, and we do not knowingly collect their data.</p>
+
+<h2>Changes</h2>
+<p>If this policy changes, the new version will be posted here with a new date, and significant changes will be shown in the app.</p>
+
+<h2>Contact</h2>
+<p>Questions about your privacy or this policy: <a id="contact" href="mailto:privacy@caliberperpetual.com">privacy@caliberperpetual.com</a>.</p>
+</main>
+</body>
+</html>
