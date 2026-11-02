@@ -1,0 +1,75 @@
+/* Caliber native shell: sign-in gate and account sheet. Uses calibre.html's Forged tokens. */
+:root{--cs-sleeve:#FF8A1F}
+:root[data-theme="light"]{--cs-sleeve:#E8771A}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]){--cs-sleeve:#E8771A}}
+html.cs-locked,html.cs-locked body{overflow:hidden}
+
+.cs-gate{position:fixed;inset:0;z-index:9000;overflow-y:auto;color:var(--text);
+  background:radial-gradient(80% 40% at 100% -6%,var(--heat),transparent 70%),var(--bg);
+  padding:calc(env(safe-area-inset-top,0px) + 56px) calc(24px + env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 28px) calc(24px + env(safe-area-inset-left,0px));
+  animation:cs-in 360ms var(--ease-out,ease-out) both}
+.cs-gate.cs-out{animation:cs-fade 240ms ease-in both}
+.cs-inner{max-width:400px;margin:0 auto;display:flex;flex-direction:column;min-height:100%}
+.cs-brand{display:flex;align-items:center;font-family:var(--font-display);font-weight:800;font-size:30px;letter-spacing:.022em;line-height:1}
+.cs-mark{display:inline-block;width:.8em;height:.8em;margin-right:-.034em;color:var(--text)}
+.cs-mark svg{display:block;width:100%;height:100%}
+.cs-h1{font-family:var(--font-display);font-weight:800;text-transform:uppercase;font-size:52px;line-height:.92;letter-spacing:.005em;margin:56px 0 14px}
+.cs-sub{color:var(--muted);font-size:16px;line-height:1.45;margin:0 0 28px}
+.cs-stack{display:flex;flex-direction:column;gap:12px}
+.cs-btn{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;min-height:52px;border-radius:14px;
+  font-family:var(--font-ui);font-weight:700;font-size:16px;transition:transform var(--dur-press,110ms) ease-out,opacity 160ms}
+.cs-btn:active:not(:disabled){transform:scale(.97)}
+.cs-btn:disabled{opacity:.45}
+.cs-logo{display:inline-flex;width:19px;height:19px;flex:none}
+.cs-logo svg{width:100%;height:100%;display:block}
+.cs-apple .cs-logo{margin-top:-3px}
+.cs-apple{background:var(--text);color:var(--bg)}
+.cs-ghost{background:linear-gradient(var(--surface-hi),var(--surface));color:var(--text);box-shadow:var(--e1);border:1px solid var(--line)}
+.cs-accent{background:var(--accent-fill);color:var(--accent-ink);box-shadow:0 8px 24px var(--glow-a)}
+.cs-danger{background:transparent;color:var(--p-red);border:1.5px solid var(--p-red)}
+.cs-or{display:flex;align-items:center;gap:12px;color:var(--faint);font-size:13px;text-transform:uppercase;letter-spacing:.08em;margin:6px 0}
+.cs-or::before,.cs-or::after{content:"";flex:1;height:1px;background:var(--line)}
+.cs-form{display:flex;flex-direction:column;gap:12px}
+.cs-input{width:100%;min-height:52px;border-radius:14px;padding:0 16px;font:inherit;font-size:17px;color:var(--text);
+  background:var(--raised);border:1px solid var(--line);outline:none}
+.cs-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--heat)}
+.cs-status{min-height:1.4em;margin:16px 0 0;font-size:15px;color:var(--muted)}
+.cs-status[data-tone="ok"]{color:var(--p-green)}
+.cs-status[data-tone="warn"]{color:var(--p-red)}
+.cs-fine{margin-top:auto;padding-top:28px;font-size:13px;color:var(--faint)}
+.cs-fine a{color:var(--accent)}
+
+.cs-scrim{position:fixed;inset:0;z-index:9100;background:var(--scrim);display:flex;align-items:flex-end;padding:0 env(safe-area-inset-right,0px) 0 env(safe-area-inset-left,0px);animation:cs-fade-in 200ms ease-out both}
+.cs-scrim.cs-out{animation:cs-fade 200ms ease-in both}
+.cs-sheet{width:100%;max-width:520px;margin:0 auto;background:linear-gradient(var(--surface-hi),var(--surface));color:var(--text);
+  border-radius:18px 18px 0 0;box-shadow:var(--e2);padding:10px 20px calc(env(safe-area-inset-bottom,0px) + 16px);
+  display:flex;flex-direction:column;gap:12px;animation:cs-up 440ms cubic-bezier(.22,1.12,.36,1) both}
+.cs-grab{width:36px;height:5px;border-radius:3px;background:var(--faint);margin:0 auto 6px;
+  /* a finger-sized target around the visible bar */ box-sizing:content-box;padding:8px 40px;background-clip:content-box;margin-top:-8px;cursor:grab;touch-action:none}
+.cs-sheet .cs-h3,.cs-sheet .cs-sub{touch-action:none}
+.cs-h3{font-family:var(--font-display);font-weight:800;text-transform:uppercase;font-size:26px;letter-spacing:.01em;margin:4px 0 0}
+.cs-sheet .cs-sub{margin:0 0 4px}
+.cs-danger-zone{margin-top:12px;padding-top:16px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.cs-danger-zone h4{margin:0;font-size:15px;color:var(--p-red)}
+.cs-danger-zone p{margin:0;font-size:14px;color:var(--muted);line-height:1.45}
+.cs-link{color:var(--accent);font-weight:700;padding:10px;align-self:center}
+
+@keyframes cs-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes cs-fade{to{opacity:0}}
+@keyframes cs-fade-in{from{opacity:0}}
+@keyframes cs-up{from{transform:translateY(100%)}to{transform:none}}
+@media (prefers-reduced-motion:reduce){.cs-gate,.cs-gate.cs-out,.cs-scrim,.cs-scrim.cs-out,.cs-sheet{animation:none}.cs-btn{transition:none}}
+
+/* import summary */
+.cs-counts{width:100%;border-collapse:collapse;margin:4px 0 6px;font-size:15px}
+.cs-counts th{font-weight:600;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;text-align:right;padding:6px 4px}
+.cs-counts th:first-child{text-align:left}
+.cs-counts td{padding:9px 4px;border-top:1px solid var(--line)}
+.cs-counts td.num{text-align:right;font-family:var(--font-num);font-weight:700;font-size:18px;font-variant-numeric:tabular-nums}
+.cs-counts .cs-ok{color:var(--p-green);text-align:center;font-weight:700}
+.cs-counts .cs-bad{color:var(--p-red);text-align:center;font-weight:700}
+
+/* privacy policy sheet */
+.cs-scrim.cs-top{z-index:9200}
+.cs-doc{height:calc(100% - env(safe-area-inset-top,0px) - 24px);padding-bottom:calc(env(safe-area-inset-bottom,0px) + 8px)}
+.cs-frame{flex:1;width:100%;border:0;border-radius:12px;background:var(--bg)}
