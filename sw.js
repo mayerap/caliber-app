@@ -26,7 +26,9 @@ self.addEventListener('fetch', e => {
 
 async function networkFirst(req, key) {
   const cache = await caches.open(CACHE);
-  const net = fetch(req).then(res => {
+  // no-cache: ask the server every time (a quick 304 when nothing changed), since GitHub Pages lets
+  // browsers keep files 10 minutes and a deploy would otherwise reach people late, or half of it would
+  const net = fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' }).then(res => {
     if (res.status === 200) cache.put(key, res.clone()).catch(() => {});
     return res;
   });
