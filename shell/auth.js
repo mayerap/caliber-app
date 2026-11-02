@@ -107,7 +107,9 @@
     }
     const known = localStorage.getItem(ACCESS + uid);
     if (known === 'approved') { hideGate(); hideHold(); } else showHold('checking', s);
-    const { data, error } = await sb.rpc('caliber_access', { platform: 'web' }).catch(e => ({ error: e }));
+    let data, error;
+    try { ({ data, error } = await sb.rpc('caliber_access', { platform: 'web' })); }   // a query builder: thenable, no .catch
+    catch (e) { error = e; }
     if (session?.user?.id !== uid) return;                // signed out meanwhile
     if (error) {
       // the server doesn't have the approval step yet: let people in rather than lock everyone out
