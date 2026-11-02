@@ -3175,7 +3175,6 @@ function Progress({ units, week, logs, hist, planned, bw, bwGoal, onLogBw, onDel
       </div>`}
 
       ${tab === 'food' && html`<${FoodSection} ...${foodProps} caff=${caffProps} units=${units} onLogBw=${onLogBw}/>`}
-      ${tab === 'food' && caffProps && !(foodProps.nut && foodProps.targets) && html`<${CaffeineCard} ...${caffProps}/>`}
       ${tab === 'body' && html`<${BodySection} entries=${bw} units=${units} goal=${bwGoal} onLog=${onLogBw} onDelete=${onDeleteBw}/>`}
 
       ${tab === 'training' && html`<div>
@@ -3428,7 +3427,7 @@ const GUIDE = [
   { tab:'program', find:byHeading('Your week'), opt:1, t:'Your week', d:'This week’s plan, day by day. Tap a day to see its session, move it, or swap it with another day.' },
   { tab:'program', find:() => [...document.querySelectorAll('.screen button.callout')].find(b => /Travel/.test(b.textContent)), opt:1, t:'Travel mode', d:'Away from your gym? Set the dates and what equipment you’ll have, and every lift day on the trip swaps to fit. Your program picks back up when you’re home.' },
   { tab:'program', find:() => [...document.querySelectorAll('.screen button')].find(b => /Restart this block/.test(b.textContent)), t:'Start over or catch up', d:'Missed a stretch? Restart the block from week 1 with the same exercises. Starting partway through a week, Today offers Fit my week to fit the sessions into the days you have left.' },
-  { tab:'program', sel:'.import', opt:1, t:'Bring your own program', d:'Already have a program? Import a spreadsheet, or let Claude read a photo, PDF or pasted text. A screenshot of a single workout, like today’s WOD, loads as a workout to do now. When a program ends, Caliber continues with its own blocks.' },
+  { tab:'program', sel:'.import', opt:1, t:'Bring your own program', d:'Already have a program? Import a spreadsheet, or let Claude read a photo, PDF or pasted text. A screenshot of a single workout, like today’s WOD, loads as a workout to do now. Imported programs stay on a week until you move to the next one: tap it on the Program tab.' },
   { tab:'program', sel:'[data-tour="exlib"]', opt:1, t:'Exercise library', d:'Search every exercise, from squats to sled pushes, and see how to do it: the main lifts have a video with the working muscles highlighted, the rest a moving figure. Plus what it works and what you need. Not there? Add your own exercise and ask for it to be added. When it is, Today tells you and moves your sets over to it.' },
   { tab:'program', sel:'[data-tour="wods"]', opt:1, t:'Free workouts', d:'8- and 12-week race plans for HYROX-format events, Hero workouts, benchmarks, and challenges like the 1,000 lb club. Load any workout into today and check off the sets as you go. There’s also a link to today’s workout on CrossFit.com.' },
   { tab:'progress', find:() => { const x = document.querySelector('[aria-label="Progress view"]'); return x && x.parentElement; }, t:'Progress', d:'Strength, body weight, food and training trends, each on its own tab.' },
@@ -4708,44 +4707,44 @@ function WeekBars({ data, labels, target }){
 }
 
 function FoodSection({ caff, nut, targets, todayT, food, units, onAdd, onDelete, onSetup, onRecalc, onLogBw, onCopyMeal, onNut, water, onWater, waterGoal, fasting, onFastStart, onFastEnd, onFastProtocol }){
-  if(!nut || !nut.on) return html`<div className="panel empty" style=${{marginTop:14}}>
+  const lastMealAt = Object.keys(food).sort().reverse().map(d => (food[d] || []).filter(e => e.at)).find(a => a.length)?.reduce((a, e) => Math.max(a, e.at), 0) || null;
+  // Water, caffeine and fasting work without nutrition targets (the Today tiles open this screen)
+  const trackers = html`<${WaterCard} oz=${water} goal=${waterGoal} units=${units} onAdd=${onWater}/>
+    ${caff && html`<${CaffeineCard} ...${caff}/>`}
+    <${FastingCard} fasting=${fasting} lastMealAt=${lastMealAt} onStart=${onFastStart} onEnd=${onFastEnd} onProtocol=${onFastProtocol}/>`;
+  if(!nut || !nut.on) return html`<div><div className="panel empty" style=${{marginTop:14}}>
     <div className="ic"><${Icon} name="food"/></div>
     <div style=${{fontWeight:700,fontSize:18}}>Nutrition is off</div>
     <p className="muted" style=${{margin:'6px 0 16px'}}>Get calorie and protein targets that adjust each week from your weigh-ins and what you eat.</p>
     <button className="btn primary" onClick=${onSetup}><${Icon} name="food"/> Set up nutrition</button>
-  </div>`;
-  if(!targets) return html`<div className="panel empty" style=${{marginTop:14}}>
-    <div className="ic"><${Icon} name="scale"/></div>
-    <div style=${{fontWeight:700,fontSize:18}}>Log your body weight first</div>
-    <p className="muted" style=${{margin:'6px 0 16px'}}>Your targets are calculated from your trend weight.</p>
-    <button className="btn primary" onClick=${onLogBw}><${Icon} name="scale"/> Log body weight</button>
-  </div>`;
+  </div>${trackers}</div>`;
   const today = localDate(), entries = food[today] || [], t = sumFood(entries), T = todayT || targets;
   const yest = food[addDays(today, -1)] || [], split = MEAL_SPLITS[nut.mealSplit || 'off'];
-  const lastMealAt = Object.keys(food).sort().reverse().map(d => (food[d] || []).filter(e => e.at)).find(a => a.length)?.reduce((a, e) => Math.max(a, e.at), 0) || null;
   const days = Array.from({ length:7 }, (_, i) => addDays(weekKey(), i));
   const kc = days.map(d => Math.round(sumFood(food[d]).kcal));
   const past = days.filter((d, i) => d < today && kc[i] > 0);
   const avgK = past.length ? Math.round(past.reduce((a, d) => a + sumFood(food[d]).kcal, 0) / past.length) : null;
   const avgP = past.length ? Math.round(past.reduce((a, d) => a + sumFood(food[d]).p, 0) / past.length) : null;
-  const srcText = targets.src === 'fixed' ? 'You set this calorie target yourself, so it won’t adjust. The expenditure estimate is for comparison.'
+  const srcText = !targets ? '' : targets.src === 'fixed' ? 'You set this calorie target yourself, so it won’t adjust. The expenditure estimate is for comparison.'
     : targets.src === 'data' ? `Calculated from ${targets.days} days of your food logs and weigh-ins.`
     : targets.src === 'blend' ? `Partly from your data (${targets.days} days logged). It gets more precise as you log.`
     : 'An estimate for now. After 10 days of food logs it’s calculated from your own data.';
   return html`<div>
     <section className="panel" style=${{marginTop:14}}>
-      <div className="section-head" style=${{margin:'0 0 2px'}}><h2>Today</h2><span>${fmtNum(Math.max(0, T.kcal - Math.round(t.kcal)))} kcal left</span></div>
-      <${MacroBar} label="Calories" val=${t.kcal} target=${T.kcal} unit=" kcal"/>
+      <div className="section-head" style=${{margin:'0 0 2px'}}><h2>Today</h2><span>${T ? `${fmtNum(Math.max(0, T.kcal - Math.round(t.kcal)))} kcal left` : `${fmtNum(Math.round(t.kcal))} kcal, ${Math.round(t.p)} g protein`}</span></div>
+      ${T ? html`<${MacroBar} label="Calories" val=${t.kcal} target=${T.kcal} unit=" kcal"/>
       <${MacroBar} label="Protein" val=${t.p} target=${T.protein} unit=" g"/>
       <${MacroBar} label="Carbs" val=${t.c} target=${T.carbs} unit=" g"/>
-      <${MacroBar} label="Fat" val=${t.f} target=${T.fat} unit=" g"/>
-      ${T.cycled ? html`<p className="note" style=${{marginBottom:0}}>${T.cycled > 0 ? `Lifting day: ${fmtNum(T.cycled)} more calories than your weekly average, mostly carbs.` : `Rest day: ${fmtNum(-T.cycled)} fewer calories than your weekly average.`}</p>` : ''}
+      <${MacroBar} label="Fat" val=${t.f} target=${T.fat} unit=" g"/>`
+      : html`<p className="note">Your calorie and protein targets are calculated from your trend weight. Log your body weight to see them.</p>
+      <button className="btn secondary block" onClick=${onLogBw}><${Icon} name="scale"/> Log body weight</button>`}
+      ${T && T.cycled ? html`<p className="note" style=${{marginBottom:0}}>${T.cycled > 0 ? `Lifting day: ${fmtNum(T.cycled)} more calories than your weekly average, mostly carbs.` : `Rest day: ${fmtNum(-T.cycled)} fewer calories than your weekly average.`}</p>` : ''}
       <button className="btn primary block" style=${{marginTop:8}} onClick=${() => onAdd()}><${Icon} name="food"/> Add food</button>
     </section>
     <div className="section">
       <div className="section-head"><h2>Meals</h2><span>${entries.length} ${entries.length === 1 ? 'item' : 'items'} logged</span></div>
       ${MEALS.map(([k, label]) => {
-        const items = entries.filter(e => mealOf(e) === k), sub = sumFood(items), goal = split[k] ? Math.round(T.kcal * split[k] / 100 / 10) * 10 : null;
+        const items = entries.filter(e => mealOf(e) === k), sub = sumFood(items), goal = split[k] && T ? Math.round(T.kcal * split[k] / 100 / 10) * 10 : null;
         const prev = yest.filter(e => (e.meal || e.at) && mealOf(e) === k);
         return html`<div className="panel meal" key=${k}>
           <div className="meal-h"><b>${label}</b>
@@ -4764,15 +4763,13 @@ function FoodSection({ caff, nut, targets, todayT, food, units, onAdd, onDelete,
       <div style=${{padding:'6px 4px 0'}}><p className="opt-label" style=${{margin:'0 0 8px'}}>Meal goals</p>
         <div className="wrap">${Object.entries(MEAL_SPLITS).map(([k, m]) => html`<button key=${k} className="pick" aria-pressed=${(nut.mealSplit || 'off') === k} onClick=${() => onNut({ mealSplit:k })}>${m.label}</button>`)}</div></div>
     </div>
-    <${WaterCard} oz=${water} goal=${waterGoal} units=${units} onAdd=${onWater}/>
-    ${caff && html`<${CaffeineCard} ...${caff}/>`}
-    <${FastingCard} fasting=${fasting} lastMealAt=${lastMealAt} onStart=${onFastStart} onEnd=${onFastEnd} onProtocol=${onFastProtocol}/>
-    <div className="section">
+    ${trackers}
+    ${targets && html`<div className="section">
       <div className="section-head"><h2>This week</h2><span>${avgK ? `Averaging ${fmtNum(avgK)} kcal, ${avgP} g protein` : 'Log a few days to see averages'}</span></div>
       <div className="panel"><${WeekBars} data=${kc} labels=${WEEKDAYS.map(d => d.charAt(0))} target=${targets.kcal}/></div>
-    </div>
-    <${NutritionInsights} food=${food} targets=${targets}/>
-    <div className="section">
+    </div>`}
+    ${targets && html`<${NutritionInsights} food=${food} targets=${targets}/>`}
+    ${targets && html`<div className="section">
       <div className="section-head"><h2>Targets this week</h2><span>${NUT_GOALS[nut.goal].label}${nut.calMode === 'fixed' ? ', fixed calories' : nut.goal !== 'maintain' ? `, ${rateLabel(nut.rate, units)} a week` : ''}</span></div>
       <div className="panel">
         <${MacroSplit} t=${targets}/>
@@ -4790,7 +4787,7 @@ function FoodSection({ caff, nut, targets, todayT, food, units, onAdd, onDelete,
         <div className="btns2"><button className="btn secondary" style=${{height:42}} onClick=${onSetup}>Change goal</button>
           <button className="btn secondary" style=${{height:42}} onClick=${onRecalc}>Recalculate now</button></div>
       </div>
-    </div>
+    </div>`}
   </div>`;
 }
 
@@ -8062,7 +8059,7 @@ function CheckinSheet({ review, existing, photos, firstPhoto, units, onSave, onC
     <div className="rating" role="group" aria-label="Week rating">${RATINGS.map((l, i) => html`<button key=${l} aria-pressed=${rating === i + 1} onClick=${() => setRating(i + 1)}>${l}</button>`)}</div>
     <div className="section-head" style=${{margin:'20px 4px 8px'}}><h2>Notes</h2><span>Optional</span></div>
     <textarea className="notes" value=${notes} placeholder="Sleep, stress, how lifts felt, anything to remember" onChange=${e => setNotes(e.target.value)}></textarea>
-    <div className="section-head" style=${{margin:'20px 4px 8px'}}><h2>Progress photos</h2><span>Kept on this device</span></div>
+    <div className="section-head" style=${{margin:'20px 4px 8px'}}><h2>Progress photos</h2><span>${window.caliberSync ? 'Private to your account' : 'Kept on this device'}</span></div>
     <input ref=${fileRef} type="file" accept="image/*" multiple style=${{display:'none'}} onChange=${addPhotos}/>
     <div className="photos">
       ${pics.map(p => html`<div className="ph" key=${p.id}><img src=${p.src} alt="Progress photo"/>
@@ -9940,7 +9937,7 @@ function RecalcSheet({ fromN, toN, plan, planIdx, fromDay, onConfirm, onAlternat
 function SwapSheet({ ex, options, units, imported, onPick, onClose, scopeLabels, defaultScope, onAddMine }){
   const [scope, setScope] = useState(defaultScope || 'program');
   const [own, setOwn] = useState(false);
-  const scopeSeg = html`<${Seg} wide label="Apply to" value=${scope} onChange=${setScope} options=${[{ v:'session', l:(scopeLabels || [])[0] || 'This session' }, { v:'program', l:(scopeLabels || [])[1] || 'Rest of program' }]}/>`;
+  const scopeSeg = html`<${Seg} wide label="Apply to" value=${scope} onChange=${setScope} options=${[{ v:'session', l:(scopeLabels || [])[0] || 'This workout' }, { v:'program', l:(scopeLabels || [])[1] || 'Rest of program' }]}/>`;
   const optFor = lib => ({ key:lib.id, n:lib.n, lib, w:null, each:lib.each });
   if(own) return html`<${Sheet} title="Your own exercise" sub=${`Instead of ${ex.n}`} onClose=${onClose}>
     <button className="link" style=${{marginBottom:12}} onClick=${() => setOwn(false)}>← Back to the swaps</button>
@@ -10580,7 +10577,7 @@ function ImportSheet({ onClose, onCommit, units, canTemplate, downloadTemplate, 
       const out = await readProgram({ images, text, signal:ctl.signal, onText:() => setAiMsg('Writing it out…') });
       // One workout (for time, AMRAP, EMOM), not a program: read it as a whiteboard workout to do today
       if(isWodReply(out)){
-        if(!readBoard || !onDay) throw new Error('That’s a single workout, not a program. Add it from Free workouts, Log a workout.');
+        if(!readBoard || !onDay) throw new Error('That’s a single workout, not a program. Add it from Free workouts, Log any workout.');
         setAiMsg('That’s one workout, not a program. Setting it up…');
         const r = await readBoard({ images, text, signal:ctl.signal });
         if(!r || !r.blocks || !r.blocks.length) throw new Error('No workout could be read from that. Try a clearer photo, or paste the text instead.');
@@ -11584,9 +11581,20 @@ Reply with only a JSON object and nothing else: {"label": short food name, "serv
   // ---- your data ----
   async function saveFile(filename, text, title){
     if(!dl){
+      const type = /\.json$/.test(filename) ? 'application/json' : 'text/csv';
+      // In a browser (the web app on a computer or Android): a normal download
+      if(!(window.Capacitor && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform())){
+        try{
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(new Blob([text], { type })); a.download = filename;
+          document.body.append(a); a.click();
+          setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+          toast(`Downloaded ${filename}.`); return true;
+        }catch(e){ /* falls back to the share sheet or the copy screen */ }
+      }
       // iPhone app: the share sheet saves the file to Files or sends it anywhere
       try{
-        const f = new File([text], filename, { type: /\.json$/.test(filename) ? 'application/json' : 'text/csv' });
+        const f = new File([text], filename, { type });
         if(navigator.canShare && navigator.canShare({ files:[f] })){ await navigator.share({ files:[f], title }); return true; }
       }catch(e){ if(e && e.name === 'AbortError') return false; }
       return setSheet({ type:'exportText', title, text });
