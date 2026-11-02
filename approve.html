@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Caliber – Web access</title>
+<link rel="icon" href="icon-32.png" sizes="32x32">
+<!-- Opened from the owner's "Web sign-up waiting" email (supabase/functions/web-access). Nothing is decided until
+     the button is pressed, because mail scanners open links. build-companion.mjs fills in the Supabase config below. -->
+<style>
+  :root { --bg:#171A20; --surface:#1F232B; --line:#313744; --text:#F2EFE9; --muted:#9AA3B2; --accent:#FF8A1F; --warn:#FF6B5E; }
+  @media (prefers-color-scheme: light) { :root { --bg:#F2F3F5; --surface:#FFFFFF; --line:#E1E4E9; --text:#14171C; --muted:#5B6472; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px 16px;
+         background: var(--bg); color: var(--text); font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Inter Tight", system-ui, sans-serif; }
+  main { width: 100%; max-width: 420px; background: var(--surface); border: 1px solid var(--line); border-radius: 22px; padding: 28px 24px; }
+  h1 { font-size: 24px; line-height: 1.2; margin: 0 0 8px; }
+  p { margin: 0 0 20px; color: var(--muted); }
+  button { width: 100%; font: inherit; font-weight: 700; border: 0; border-radius: 14px; padding: 14px; cursor: pointer;
+           background: var(--accent); color: #14110E; }
+  button.deny { background: var(--warn); color: #fff; }
+  button:disabled { opacity: .6; cursor: default; }
+  .done { color: var(--text); }
+</style>
+</head>
+<body>
+<main>
+  <h1 id="title">Web access</h1>
+  <p id="sub">Checking the link…</p>
+  <button id="go" hidden></button>
+</main>
+<script>
+  const CFG = {"url":"https://xbapjmnnsnkaxelldkpl.supabase.co","publishableKey":"sb_publishable_FBcN60xU0nqNnNcfLijWGA_VDTeQEMU"};
+  const q = new URLSearchParams(location.search);
+  const decision = q.get('d'), user = q.get('u'), token = q.get('t');
+  const title = document.getElementById('title'), sub = document.getElementById('sub'), go = document.getElementById('go');
+  if (!['approve', 'deny'].includes(decision) || !user || !token) {
+    title.textContent = 'This link is incomplete';
+    sub.textContent = 'Open it again from the email.';
+  } else {
+    const approve = decision === 'approve';
+    title.textContent = approve ? 'Approve this person?' : 'Deny this person?';
+    sub.textContent = approve ? 'They can use Caliber on the web right away, and get an email saying so.'
+      : 'They stay on the waiting screen. Nobody is emailed. You can approve them later from the same email.';
+    go.textContent = approve ? 'Approve' : 'Deny';
+    go.className = approve ? '' : 'deny';
+    go.hidden = false;
+    go.onclick = async () => {
+      go.disabled = true; go.textContent = approve ? 'Approving…' : 'Denying…';
+      try {
+        const res = await fetch(`${CFG.url}/functions/v1/web-access`, {
+          method: 'POST',
+          headers: { apikey: CFG.publishableKey, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'decide', decision, user, token }),
+        });
+        const r = await res.json().catch(() => ({}));
+        if (!res.ok) throw new Error(r.error === 'bad_link' ? 'This link isn’t valid. Open it again from the email.'
+          : r.error === 'not_found' ? 'That account no longer exists.' : r.error || `HTTP ${res.status}`);
+        title.textContent = r.status === 'approved' ? 'Approved' : 'Denied';
+        sub.className = 'done';
+        sub.textContent = r.status === 'approved'
+          ? `${r.email} can use Caliber on the web.${r.already ? ' (They were already approved.)' : r.emailed ? ' They’ve been emailed.' : ' The email to them didn’t send, so let them know yourself.'}`
+          : `${r.email} stays on the waiting screen.${r.already ? ' (They were already denied.)' : ''}`;
+        go.hidden = true;
+      } catch (e) {
+        sub.textContent = String(e.message || e);
+        go.disabled = false; go.textContent = approve ? 'Approve' : 'Deny';
+      }
+    };
+  }
+</script>
+</body>
+</html>
