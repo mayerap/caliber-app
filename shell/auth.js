@@ -168,7 +168,7 @@
     busy(btn, false, 'Email me a sign-in link');
     if (error) return setGateMessage(friendly(error), 'warn');
     setGateMessage(NATIVE ? `Check ${address} and tap the link on this iPhone. It opens Caliber and signs you in.`
-      : `Check ${address} and open the link in this browser. It brings you back here, signed in.`, 'ok');
+      : `Check ${address} for an email from Caliber and tap Sign in to Caliber. Any browser works.`, 'ok');
   }
 
   // Web: Google and Apple sign in on their own page, then return to REDIRECT with a code (see finishRedirect)
@@ -211,13 +211,46 @@
     if (!url || !url.startsWith(REDIRECT)) return;
     const u = new URL(url.replace('caliber://', 'https://caliber.invalid/'));
     const p = new URLSearchParams(u.search + '&' + u.hash.slice(1));
-    if (!NATIVE && (p.get('code') || p.get('error'))) history.replaceState(null, '', location.pathname);   // a reload doesn't reuse it
+    if (!NATIVE && (p.get('code') || p.get('error') || p.get('token_hash'))) history.replaceState(null, '', location.pathname);   // a reload doesn't reuse it
+    // The sign-in email's web link (docs/email-templates/) brings a token_hash, and nothing is used up until the person
+    // taps Finish signing in: work email scanners open links to check them, which used to spend the one-time link.
+    if (!NATIVE && p.get('token_hash')) return showConfirm(p.get('token_hash'), p.get('type'));
     if (p.get('error')) return showGate(p.get('error_description')?.replace(/\+/g, ' ') || 'That sign-in link didn’t work. Request a new one.');
     const code = p.get('code');
     if (!code) return;
     const { error } = await sb.auth.exchangeCodeForSession(code);
     if (error) showGate(error.message.includes('code verifier')
       ? `Open the sign-in link on the same ${DEVICE} where you asked for it.` : friendly(error));
+  }
+
+  let confirmEl = null;
+  function showConfirm(tokenHash, type) {
+    if (!document.body) return document.addEventListener('DOMContentLoaded', () => showConfirm(tokenHash, type), { once: true });
+    if (!['email', 'magiclink', 'signup', 'invite'].includes(type)) type = 'email';
+    hideGate();
+    const status = h('p', { class: 'cs-status', role: 'status', 'aria-live': 'polite' });
+    const go = h('button', { class: 'cs-btn cs-accent' }, h('span', { class: 'cs-label' }, 'Finish signing in'));
+    const back = h('button', { class: 'cs-btn cs-ghost', style: 'display:none' }, h('span', { class: 'cs-label' }, 'Back to sign in'));
+    const close = () => { const c = confirmEl; confirmEl = null; c?.remove(); if (!gate && !hold) document.documentElement.classList.remove('cs-locked'); };
+    go.addEventListener('click', async () => {
+      busy(go, true, 'Signing in…');
+      const { error } = await sb.auth.verifyOtp({ token_hash: tokenHash, type });
+      if (!error) return close();                         // signed in: the access check takes it from here
+      busy(go, false, 'Finish signing in');
+      go.style.display = 'none'; back.style.display = '';
+      status.textContent = /expired|invalid|not found/i.test(error.message)
+        ? 'That link was already used or has expired. Go back and ask for a new one.' : friendly(error);
+      status.dataset.tone = 'warn';
+    });
+    back.addEventListener('click', () => { close(); showGate(); });
+    confirmEl = h('div', { class: 'cs-gate', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Finish signing in' },
+      h('div', { class: 'cs-inner' },
+        h('div', { class: 'cs-brand' }, mark(), h('span', { class: 'cs-word' }, 'ALIBER')),
+        h('h1', { class: 'cs-h1' }, 'Almost in'),
+        h('p', { class: 'cs-sub' }, 'Tap below to finish signing in to Caliber.'),
+        h('div', { class: 'cs-stack' }, go, back), status));
+    document.body.append(confirmEl);
+    document.documentElement.classList.add('cs-locked');
   }
 
   function friendly(e) {
@@ -366,7 +399,7 @@
 
   sb.auth.onAuthStateChange((event, s) => {
     session = s;
-    if (!s) { hideHold(); showGate(); }
+    if (!s) { hideHold(); if (!confirmEl) showGate(); }
     // after the callback: calling Supabase from inside it deadlocks on its auth lock
     else if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') setTimeout(() => admit(s), 0);
     else if (!hold) hideGate();
@@ -378,7 +411,7 @@
     if (!NATIVE) await finishRedirect(location.href);    // back from a sign-in link, Google or Apple
     const { data } = await sb.auth.getSession();
     session = data.session;
-    if (!session && !gate) showGate();                   // keeps a sign-in error from finishRedirect on screen
+    if (!session && !gate && !confirmEl) showGate();     // keeps a sign-in error, or Finish signing in, on screen
     const launch = NATIVE && await AppPlugin.getLaunchUrl().catch(() => null);
     if (launch?.url) finishRedirect(launch.url);
   });
