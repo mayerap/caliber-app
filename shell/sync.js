@@ -404,6 +404,7 @@
   }
   function offerImport() {
     if (localStorage.getItem(OFFER_KEY) !== '1') return;
+    if (document.querySelector?.('.cs-gate')) return;     // signed out, or waiting for web approval: offer it on a later open
     origRemove.call(localStorage, OFFER_KEY);
     sheetWith('Bring your Caliber history', 'Have a backup file from the Caliber web app? Import it and your workouts, weigh-ins and food come with you.', (sheet, close) => {
       const input = el('input'); input.type = 'file'; input.accept = '.json,application/json'; input.style.display = 'none';

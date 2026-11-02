@@ -147,7 +147,7 @@
     }
     hold.querySelector('.cs-h1').textContent = title;
     hold.querySelector('.cs-sub').textContent = text;
-    hold.querySelector('.cs-stack').hidden = kind === 'checking';
+    hold.querySelector('.cs-stack').style.display = kind === 'checking' ? 'none' : '';   // .cs-stack's display beats [hidden]
   }
   function hideHold() {
     if (!hold) return;
@@ -365,7 +365,8 @@
   sb.auth.onAuthStateChange((event, s) => {
     session = s;
     if (!s) { hideHold(); showGate(); }
-    else if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') admit(s);
+    // after the callback: calling Supabase from inside it deadlocks on its auth lock
+    else if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') setTimeout(() => admit(s), 0);
     else if (!hold) hideGate();
     document.dispatchEvent(new CustomEvent('caliber:auth', { detail: { event, signedIn: !!s } }));
   });
