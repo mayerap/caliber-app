@@ -2059,7 +2059,7 @@ const bodyTone = z => z <= -1 ? 'var(--p-red)' : z <= -0.5 ? 'var(--p-yellow)' :
    Planned here for this week and next, from the week as it stands (moves and skips included), and handed to
    CaliberSystemPlugin.reminders, which replaces whatever was scheduled before. Re-planned whenever the week, your logs,
    check-ins or these settings change, so a day you've already trained or checked in gets no reminder. */
-const NOTIFY_DEFAULT = { workout:false, workoutTime:'17:30', checkin:false, checkinTime:'07:30', weekly:false, weeklyTime:'18:00', rest:false };
+const NOTIFY_DEFAULT = { workout:false, workoutTime:'17:30', checkin:false, checkinTime:'07:30', weekly:false, weeklyTime:'18:00', rest:false, friends:true };
 // weeks: [{ start:'YYYY-MM-DD', days:[{ type, skipped, name, min }] }]; logged / checkedIn: sets of dates; weeklyDone: set of week starts
 function planReminders({ notify, weeks, logged, checkedIn, weeklyDone, now = Date.now() }){
   const n = { ...NOTIFY_DEFAULT, ...(notify || {}) }, out = [];
@@ -2077,7 +2077,7 @@ function planReminders({ notify, weeks, logged, checkedIn, weeklyDone, now = Dat
   });
   return out.filter(x => x.at > now + 60000).sort((a, b) => a.at - b.at);
 }
-function NotifySheet({ notify, denied, onSave, onClose }){
+function NotifySheet({ notify, denied, friends, onSave, onClose }){
   const n = { ...NOTIFY_DEFAULT, ...(notify || {}) };
   const set = p => onSave({ ...n, ...p });
   const row = (k, label, sub, tk) => html`<div className="setting" style=${{flexWrap:'wrap',gap:8}}>
@@ -2092,6 +2092,7 @@ function NotifySheet({ notify, denied, onSave, onClose }){
       ${row('checkin', 'Morning check-in', 'On lift days, so readiness can tune your loads', 'checkinTime')}
       ${row('weekly', 'Weekly check-in', 'On the last day of your week', 'weeklyTime')}
       ${row('rest', 'Rest’s up', 'When Caliber is in the background during a workout', null)}
+      ${friends && row('friends', 'Friends', 'When someone asks to be friends, or accepts your request or invite', null)}
     </div>
     <p className="note">Reminders skip days you’ve already trained or checked in, and follow this week’s moves and skips. The first one you turn on asks iPhone for permission.</p>
   </${Sheet}>`;
@@ -2471,8 +2472,8 @@ function SessionOverview({ day, warm, cool, units, label, onOpen, budget, time, 
     <div className="keyl">
       ${keys.map((e, i) => html`<button className="kr" key=${i} onClick=${() => onOpen && onOpen(e, day.ex.indexOf(e))}>
         <span style=${{minWidth:0,textAlign:'left'}}><span className="row-title" style=${{display:'block'}}>${e.n}</span>
-          <span className="row-sub">${e.test ? TEST_METHODS[e.test].todo : `${setsReps(e)}${e.rir != null && !e.noEffort ? ` at ${eff(e.rir)}` : ''}`}</span></span>
-        <span className="num">${e.test ? TEST_METHODS[e.test].short : e.w == null || (exUnit(e.n) && !(e.w > 0)) ? '' : e.w === 0 ? 'BW' : `${e.added ? '+' : ''}${toUnit(e.w, units)} ${units}`}</span>
+          <span className="row-sub">${e.test ? (e.w > 0 ? (e.test === 'actual' ? 'Singles up to your max' : 'One set, as many reps as you can') : TEST_METHODS[e.test].todo) : `${setsReps(e)}${e.rir != null && !e.noEffort ? ` at ${eff(e.rir)}` : ''}`}</span></span>
+        <span className="num">${e.test ? (e.w > 0 ? `${toUnit(e.w, units)} ${units}` : TEST_METHODS[e.test].short) : e.w == null || (exUnit(e.n) && !(e.w > 0)) ? '' : e.w === 0 ? 'BW' : `${e.added ? '+' : ''}${toUnit(e.w, units)} ${units}`}</span>
       </button>`)}
     </div>
     ${(extra || test) && html`<p className="note" style=${{margin:'0 2px 12px'}}>${test ? `Find your ${test.n.toLowerCase()} max today. ` : ''}${extra}${extra ? '.' : ''}</p>`}
@@ -2718,7 +2719,7 @@ function LiftToday({ day, units, openSheet, warm, cool, tiles, budget, time, cor
           <span className="ic"><${Icon} name="flag"/></span>
           <span className="row-main">
             <span className="row-title" style=${{display:'block'}}>Find your ${t.n.toLowerCase()} max today</span>
-            <span className="row-sub">${TEST_METHODS[t.test].todo}, then enter the result.</span>
+            <span className="row-sub">${t.w > 0 ? `Warm-ups and ${t.test === 'actual' ? `an opener at ${toUnit(t.w, units)} ${units}` : `a ${toUnit(t.w, units)} ${units} test set`} are in your workout. Tap for the guided steps.` : `${TEST_METHODS[t.test].todo}, then enter the result.`}</span>
           </span>
           <${Icon} name="chev" className="chev"/>
         </button>`;
@@ -2731,7 +2732,7 @@ function LiftToday({ day, units, openSheet, warm, cool, tiles, budget, time, cor
               <${ExThumb} ex=${ex}/>
               <span className="row-main">
                 <span className="row-title" style=${{display:'block'}}>${ex.n}${ex.prChance && html`<${PrMark} pr=${ex.prChance} units=${units}/>`}</span>
-                <span className="row-sub">${ex.test ? TEST_METHODS[ex.test].todo : `${setsReps(ex)}${atLoad(ex, units)}${techNote(ex)}`}</span>
+                <span className="row-sub">${ex.test ? (ex.w > 0 ? (ex.test === 'actual' ? `Singles from ${toUnit(ex.w, units)} ${units}, up to your max` : `${toUnit(ex.w, units)} ${units}, as many reps as you can`) : TEST_METHODS[ex.test].todo) : `${setsReps(ex)}${atLoad(ex, units)}${techNote(ex)}`}</span>
               </span>
               ${ex.swappedFrom ? html`<span className="chip accent">${day.travel ? 'Travel swap' : 'Home swap'}</span>` : ex.test ? html`<span className="chip accent">${TEST_METHODS[ex.test].short}</span>` : html`<span className="chip">${eff(ex.rir)}</span>`}
               <${Icon} name="chev" className="chev"/>
@@ -2854,7 +2855,6 @@ function Today({ week, units, readiness, openSheet, onSkip, blockMeta, todayLog,
         : 'At home: everything in this session fits your setup.'}${d.session.homeDropped && d.session.homeDropped.length ? ` Left out: ${d.session.homeDropped.join(', ')}.` : ''}${d.session.dbCapped ? ` Reps raised on ${d.session.dbCapped} dumbbell ${d.session.dbCapped === 1 ? 'exercise' : 'exercises'} to match your heaviest dumbbells.` : ''}${d.session.plateCapped ? ` ${d.session.plateCapped} barbell ${d.session.plateCapped === 1 ? 'load was' : 'loads were'} adjusted to your home plates.` : ''}</p>`}
       ${live && d.type === 'lift' && html`<${LiftToday} day=${d.session} units=${units} openSheet=${openSheet} budget=${budget} time=${time} core=${core} logs=${logs} lighter=${lighter} warm=${warm} cool=${cool} tiles=${tiles}/>`}
       ${live && d.type === 'cardio' && html`<div className="today-body" style=${{marginTop:12}}><${CardioToday} c=${d.cardio || DEFAULT_CARDIO}/>${tiles}</div>`}
-      ${live && d.type === 'active' && html`<div className="today-body" style=${{marginTop:12}}><${ActiveToday} a=${d.active || DEFAULT_ACTIVE}/>${tiles}</div>`}
       ${(d.skipped || d.type === 'rest') && html`<${RestToday} next=${next} units=${units} warm=${warm} cool=${cool} tiles=${tiles}/>`}
       ${todayLog && !d.skipped && d.type !== 'rest' && tiles}
     </div>`;
@@ -3767,38 +3767,38 @@ function Onboarding({ settings, units, lifts, bwLb, firstRun, onFinish, onClose 
   </div></div>`;
 }
 
-/* ================= Guided tour: after setup, or Profile → Help → App tutorial =================
+/* ================= Guided tour: the short one after setup, the full one from Profile → Help → Take the full tour =================
    Walks the real app: switches tabs, spotlights each element and explains it.
    Steps whose element isn't on screen (a rest day has no session card) are skipped. */
 const byHeading = t => () => [...document.querySelectorAll('.section')].find(x => { const h = x.querySelector('.section-head h2'); return h && h.textContent.trim() === t; });
 const GUIDE = [
-  { tab:'today', sel:'header.top', t:'Today', d:'Every day starts here: the date, today’s session, and where you are in your current block.' },
+  { tab:'today', sel:'header.top', short:1, t:'Today', d:'Every day starts here: the date, today’s session, and where you are in your current block.' },
   { tab:'today', sel:'.blockbar', opt:1, t:'Block progress', d:'Each bar is one week of your block, colored by phase and taller as the work gets heavier. The tag marks this week. Tap it to open the whole program.' },
   { tab:'today', sel:'.loc-seg', opt:1, t:'Gym or home', d:'Training somewhere else today? Switch here and exercises and loads change to fit the equipment you have.' },
   { tab:'today', sel:'.today-actions', opt:1, t:'Move, skip, cardio or travel', d:'Busy day? Move today’s session to another day or skip it, and the week rearranges. Log cardio you did anywhere, from bike to stair stepper, or start a run, walk, hike or ride outdoors and GPS tracks distance, pace, climb and your route on a map (hikes show the climb as you go). Traveling? Pick what the hotel has and your lift days fit it until you’re home.' },
-  { tab:'today', sel:'.wkcard', opt:1, t:'This week', d:'Your week at a glance, colored by workout type: blue for lifting, red for cardio, green for active rest. Done days fill in with a check, today is outlined. Tap any day to see what’s planned.' },
+  { tab:'today', sel:'.wkcard', opt:1, short:1, t:'This week', d:'Your week at a glance, colored by workout type: blue for lifting, red for cardio, green for active rest. Done days fill in with a check, today is outlined. Tap any day to see what’s planned.' },
   { tab:'today', sel:'[data-tour="friendsweek"]', opt:1, t:'Friends this week', d:'Once you have friends, each ring fills as that person trains this week, with the week’s best moment below. Open Standings and posts to rank everyone by sessions, volume or time, or see the newest post and react. Tap a friend’s ring for their latest workout.' },
-  { tab:'today', find:() => document.querySelector('.screen section.ov') || document.querySelector('.screen .hero'), opt:1, t:'Today’s session', d:'How long it takes, how many exercises and working sets, and which muscles it trains. Short on time, or have extra? Tap Adjust time, pick how long you have, and today’s session trims or adds work to fit. On days without core work, tick Add core for a few minutes of it.' },
+  { tab:'today', find:() => document.querySelector('.screen section.ov') || document.querySelector('.screen .hero'), opt:1, short:1, t:'Today’s session', d:'How long it takes, how many exercises and working sets, and which muscles it trains. Short on time, or have extra? Tap Adjust time, pick how long you have, and today’s session trims or adds work to fit. On days without core work, tick Add core for a few minutes of it.' },
   { tab:'today', sel:'.flip-chip', opt:1, t:'Muscle map', d:'Tap to flip the card. Today’s muscles are outlined, and shading shows what’s still recovering from earlier sessions. If today hits something that isn’t ready, Caliber offers to go 10% lighter.' },
-  { tab:'today', find:byHeading('Exercises'), opt:1, t:'Exercises', d:'Each exercise with its sets, reps and weight. A trophy means the set you’re scheduled for would be a PR. Tap one for form cues, past performance, or to swap it.' },
-  { tab:'today', sel:'.tiles', opt:1, t:'Daily check-ins', d:'Quick readiness, body weight, food and water logging. Readiness tunes today’s loads to how you slept and recovered. Connect Apple Health in the check-in to add sleep, heart rate variability and resting heart rate from Apple Watch, Oura, Whoop or another tracker.' },
-  { tab:'today', sel:'.cta', opt:1, t:'Start your workout', d:'This opens the workout logger. Next, a sample workout so you can see how it works. Nothing in it is saved.' },
-  { demo:1, sel:'.logger .lg-head', opt:1, t:'The workout logger', d:'This is a sample; nothing here is saved. Up top: your time and sets done, plus pause, focus mode (one exercise at a time, with a tile for each exercise along the top: tap one to jump to it) and Finish.' },
+  { tab:'today', find:byHeading('Exercises'), opt:1, short:1, t:'Exercises', d:'Each exercise with its sets, reps and weight. A trophy means the set you’re scheduled for would be a PR. Tap one for form cues, past performance, or to swap it.' },
+  { tab:'today', sel:'.tiles', opt:1, short:1, t:'Daily check-ins', d:'Quick readiness, body weight, food and water logging. Readiness tunes today’s loads to how you slept and recovered. Connect Apple Health in the check-in to add sleep, heart rate variability and resting heart rate from Apple Watch, Oura, Whoop or another tracker.' },
+  { tab:'today', sel:'.cta', opt:1, short:1, t:'Start your workout', d:'This opens the workout logger. Next, a sample workout so you can see how it works. Nothing in it is saved.' },
+  { demo:1, sel:'.logger .lg-head', opt:1, short:1, t:'The workout logger', d:'This is a sample; nothing here is saved. Up top: your time and sets done, plus pause, focus mode (one exercise at a time, with a tile for each exercise along the top: tap one to jump to it) and Finish.' },
   { demo:1, find:() => [...document.querySelectorAll('.logger .lg-card')].find(c => c.querySelector('[aria-label^="Swap "]')), opt:1, t:'One card per exercise', d:'Target sets, reps, effort and weight. The arrows button swaps the exercise for another; the link button pairs it into a superset. In a superset, once a set is logged and rated, Caliber jumps to the other exercise.' },
   { demo:1, find:() => [...document.querySelectorAll('.logger button')].find(b => b.textContent.trim() === 'Add exercise'), opt:1, t:'Add an exercise', d:'Want one more? Add exercise, below the last card, adds any exercise to this workout only, with a starting weight from your history. Your program stays the same.' },
   { demo:1, find:() => [...document.querySelectorAll('.logger label.panel')].find(l => /Workout notes/.test(l.textContent)), opt:1, t:'Workout notes', d:'Anything worth remembering, like a crowded gym or a tweaky shoulder. Notes are saved with the workout and show in History, where you can edit them later.' },
   { demo:1, sel:'.logger .lg-pm', opt:1, t:'Plate math', d:'For barbell lifts: exactly what goes on each side of the bar for the set you’re on.' },
-  { demo:1, sel:'.logger .lg-row.next', opt:1, t:'Log a set', d:'Weight and reps are already filled in. Tap a number to change it, then tap the check. Tap the set number to change its type: W for warm-up, A for AMRAP (as many reps as you can), D for a drop set, F for to failure.' },
+  { demo:1, sel:'.logger .lg-row.next', opt:1, short:1, t:'Log a set', d:'Weight and reps are already filled in. Tap a number to change it, then tap the check. Tap the set number to change its type: W for warm-up, A for AMRAP (as many reps as you can), D for a drop set, F for to failure.' },
   { demo:1, t:'Rep ranges', d:'A target like 8–10 is a rep range. Keep the same weight until you reach the top of the range on every set; then Caliber adds weight next time. A set below the range holds the weight where it is.' },
   { demo:1, sel:'.logger .lg-row.next', swipe:{ icon:'video', label:'Film' }, opt:1, t:'Film your set', d:'In the iPhone app, swipe a set to the right and tap Film (or swipe all the way across). The camera opens: record the set, then tap Use Video. A small camera marks the set. Swipe it right again and tap Video to watch it, save it to Photos or share it with your set on a Caliber card.' },
   { demo:1, before:async () => { for(let k = 0; k < 8 && !document.querySelector('.logger .lg-rir'); k++){ const c = document.querySelector('.logger .lg-row.next .lg-check'); if(!c) break; c.click(); await new Promise(r => setTimeout(r, 180)); } },
-    sel:'.logger .lg-rir', opt:1, t:'Rate the effort', d:'After a working set, tap how many reps you had left in the tank, or your RPE. Caliber raises or lowers the next set’s weight to match the day you’re having. It waits for this before moving you on to the next exercise.' },
-  { demo:1, sel:'.rest', opt:1, t:'Rest timer', d:'Starts on its own after each set. Add or take away 15 seconds, or skip it. When it ends you’ll hear a beep, a chime or a voice telling you your next set, or no sound (choose in Profile).' },
+    sel:'.logger .lg-rir', opt:1, short:1, t:'Rate the effort', d:'After a working set, tap how many reps you had left in the tank, or your RPE. Caliber raises or lowers the next set’s weight to match the day you’re having. It waits for this before moving you on to the next exercise.' },
+  { demo:1, sel:'.rest', opt:1, short:1, t:'Rest timer', d:'Starts on its own after each set. Add or take away 15 seconds, or skip it. When it ends you’ll hear a beep, a chime or a voice telling you your next set, or no sound (choose in Profile).' },
   { demo:1, t:'Log from the Lock Screen', d:'In the iPhone app, your workout stays on the Lock Screen and in the Dynamic Island. Change the weight or reps and tap Done to log a set without opening Caliber, then tap how hard it was. Rest counts down there too, and so does a running warm-up or cool-down, with Pause and Next. Apple Watch shows the same.' },
   { demo:1, t:'Warm-up and cool-down', d:'Real workouts start with a guided warm-up and end with a cool-down, picked for the muscles you train. Each move shows step-by-step cues while it runs. Tap Edit to swap a move or remove it. At home, the warm-up uses the cardio machines you have. Rather stretch your own way? Pick Free for one timer instead; Caliber remembers your choice.' },
-  { demo:1, find:() => [...document.querySelectorAll('.logger .lg-head button')].find(b => b.textContent.trim() === 'Finish'), opt:1, t:'Finish', d:'When you’re done, Finish saves the workout, updates your maxes, shows any PRs, and lets you share a story card. This sample is thrown away.' },
-  { basics:1, t:'New to lifting?', d:'Warm up before heavy sets (Caliber adds warm-ups for you). Stop a set when your form slips. End most sets with 2 or 3 good reps left. Rest days and sleep are when you actually get stronger.' },
-  { tab:'today', sel:'.tabbar', t:'Getting around', d:'Today, your Program, workout History, Progress and your Profile. Next, a look at each.' },
+  { demo:1, find:() => [...document.querySelectorAll('.logger .lg-head button')].find(b => b.textContent.trim() === 'Finish'), opt:1, short:1, t:'Finish', d:'When you’re done, Finish saves the workout, updates your maxes, shows any PRs, and lets you share a story card. This sample is thrown away.' },
+  { basics:1, short:1, t:'New to lifting?', d:'Warm up before heavy sets (Caliber adds warm-ups for you). Stop a set when your form slips. End most sets with 2 or 3 good reps left. Rest days and sleep are when you actually get stronger.' },
+  { tab:'today', sel:'.tabbar', short:1, t:'Getting around', d:'Today, your Program, workout History, Progress and your Profile. Next, a look at each.', dShort:'Today, your Program, workout History, Progress and your Profile.' },
   { tab:'program', find:() => { const x = document.querySelector('[aria-label="Lifting days per week"]'); return x && (x.closest('section, .panel') || x); }, opt:1, t:'Days per week', d:'Change how many days you lift and Caliber rebuilds the split to match.' },
   { tab:'program', find:byHeading('Your week'), opt:1, t:'Your week', d:'This week’s plan, day by day. Tap a day to see its session, move it, or swap it with another day.' },
   { tab:'program', find:() => [...document.querySelectorAll('.screen button.callout')].find(b => /Travel/.test(b.textContent)), opt:1, t:'Travel mode', d:'Away from your gym? Set the dates and what equipment you’ll have, and every lift day on the trip swaps to fit. Your program picks back up when you’re home.' },
@@ -3819,14 +3819,15 @@ const GUIDE = [
   { tab:'profile', find:() => [...document.querySelectorAll('.screen button.row')].find(b => b.textContent.trim().startsWith('Notifications')), opt:1, t:'Reminders', d:'A workout reminder, a morning check-in on lift days, a weekly check-in, and Rest’s up when Caliber is in the background. All off until you turn them on.' },
   { tab:'program', sel:'[data-tour="myprograms"]', opt:1, t:'My programs', d:'Every program you import, build or start is saved here. Sort them into folders, and switch back to one any time: pick up at the week you were on, or start it over.' },
   { tab:'profile', find:() => [...document.querySelectorAll('.screen button')].find(b => b.textContent.startsWith('Friends')), opt:1, t:'Friends', d:'Add friends with an invite link, a code or their name. You see each other’s finished workouts and PRs, cheer them on, and compare lifts. Only friends see anything, and never your body weight, food or notes.' },
-  { tab:'profile', find:byHeading('Training'), opt:1, t:'Your settings', d:'Goal, experience, schedule, equipment (including cardio machines at home), home plates and your maxes. Change anything and your program updates.' },
+  { tab:'profile', find:byHeading('Training'), opt:1, short:1, t:'Your settings', d:'Goal, experience, schedule, equipment (including cardio machines at home), home plates and your maxes. Don’t know a max? Clear it, and Caliber plans your warm-ups and a test set for it. Change anything and your program updates.' },
   { tab:'profile', find:() => [...document.querySelectorAll('.screen button')].find(b => b.textContent.trim().startsWith('Lift records')), opt:1, t:'Lift records', d:'Every lift’s history of PRs and top sets, so you can see each step up.' },
   { tab:'profile', find:() => [...document.querySelectorAll('.screen button')].find(b => b.textContent.includes('Import from another app')), opt:1, t:'Switching apps?', d:'Bring your workouts and every PR over from Strong, Hevy, Fitbod and others. Export a CSV from the old app and choose it here.' },
   { tab:'profile', t:'Widgets and Apple Watch', d:'Add Caliber widgets to log water and caffeine with one tap and see your week (pick the drink the caffeine button adds under Progress → Food → Caffeine). On Apple Watch, log sets with the Crown (turn faster for bigger jumps) with your heart rate in the corner. The Watch uses your color theme too.' },
-  { tab:'profile', find:byHeading('Help'), t:'Help, any time', d:'Replay this tour or redo your setup from here. That’s the tour. Strong never ends.' }
+  { tab:'profile', find:byHeading('Help'), short:1, t:'Help, any time', d:'Replay this tour or redo your setup from here. That’s the tour. Strong never ends.', dShort:'That’s the basics. Take the full tour here any time to see every feature, from travel mode to the leaderboard, or redo your setup. Strong never ends.' }
 ];
-function GuidedTour({ beginner, onGo, onDemo, onClose }){
-  const steps = GUIDE.filter(x => !x.basics || beginner);
+// The first-run tour is the short one (steps marked short); Profile → Help → Take the full tour shows them all
+function GuidedTour({ full, beginner, onGo, onDemo, onClose }){
+  const steps = GUIDE.filter(x => (full || x.short) && (!x.basics || beginner));
   const [i, setI] = useState(0);
   const [rect, setRect] = useState(null);
   const [ready, setReady] = useState(false);
@@ -3890,7 +3891,7 @@ function GuidedTour({ beginner, onGo, onDemo, onClose }){
     <div className="gt-tip" ref=${tipRef} tabIndex="-1" style=${{ left:tip.left, top:tip.top, width:tipW, opacity:ready ? 1 : 0 }} aria-live="polite">
       <div className="gt-count">${i + 1 - [...skipped.current].filter(k => k < i).length} of ${steps.length - skipped.current.size}</div>
       <h3>${st.t}</h3>
-      <p>${st.d}</p>
+      <p>${!full && st.dShort || st.d}</p>
       <div className="gt-row">
         <button className="link" style=${{fontWeight:600,marginRight:'auto'}} onClick=${onClose}>${last ? 'Close' : 'Skip tour'}</button>
         ${i > 0 && html`<button className="btn secondary" onClick=${() => go(-1)}>Back</button>`}
@@ -3961,7 +3962,7 @@ function Profile({ units, setUnits, theme, setTheme, palette, setPalette, lifts,
         <div className="section-head"><h2>Help</h2></div>
         <div className="list">
           <button className="row" onClick=${() => openSheet({ type:'tour' })}><span className="dayic" style=${{'--tc':'var(--accent)'}}><${Icon} name="info"/></span>
-            <span className="row-main"><span className="row-title" style=${{display:'block'}}>App tutorial</span><span className="row-sub">A guided walk around the app</span></span>
+            <span className="row-main"><span className="row-title" style=${{display:'block'}}>Take the full tour</span><span className="row-sub">Every feature, step by step</span></span>
             <${Icon} name="chev" className="chev"/></button>
           <button className="row" onClick=${() => openSheet({ type:'onboard' })}><span className="dayic" style=${{'--tc':'var(--p-yellow)'}}><${Icon} name="pencil"/></span>
             <span className="row-main"><span className="row-title" style=${{display:'block'}}>Redo setup</span><span className="row-sub">Experience, goal, schedule, equipment and starting numbers</span></span>
@@ -6088,7 +6089,11 @@ function annotate(day, hist, settings, generated, units = 'lb'){
   return { ...day, ex:day.ex.map(e => {
     const key = exKey(e), h = hist[key];
     const out = { ...e, key, last: h ? h.recent.sets.map(x => [x.w, x.r, x.band || null]) : (e.last || []) };
-    if(e.test) return out;
+    if(e.test){
+      if(e.test === 'calc' && e.guess){ out.w = testLoad(e.guess); out.aim = testAim(e.guess); }
+      if(e.test === 'actual' && e.guess){ out.tAtt = testAttempts(e.guess.lb); out.w = out.tAtt[0]; out.tWarm = maxWarmups(e.guess.lb); }
+      return out;
+    }
     const hi = topReps(e);
     if(h && h.recent.e1rm > 0 && !e.added){
       out.w = roundFor(e, h.recent.e1rm / (1 + (hi + e.rir) / 30)); out.src = 'log';
@@ -6179,7 +6184,7 @@ function startWorkoutState(day, score, prefs = {}){
       // programs built earlier keep the library's current flags (cable fly is per arm, barbell row is a barbell lift)
       const lib = e.id && LIB_BY_ID[e.id];
       if(lib && !lib.mine && ((lib.each && !e.each) || (lib.bar && !e.bar && e.w > 0))) e = { ...e, each: e.each || lib.each, bar: e.bar || (lib.bar && e.w > 0) };
-      let w = e.w, rir = e.test ? 0 : e.rir, sets = e.sets;
+      let w = e.w, rir = e.test === 'actual' ? 1 : e.test ? 0 : e.rir, sets = e.sets;   // a 1RM single starts at "slowed down", the cautious jump
       // readiness: 5% off (at least one plate or dumbbell step, so 20 lb doesn't round back to 20), and one fewer set on
       // accessories; plans without exercise roles count everything after the first two as accessories
       const isAcc = day.ex.some(x => x.role) ? e.role === 'acc' : oi >= 2;
@@ -6187,10 +6192,12 @@ function startWorkoutState(day, score, prefs = {}){
       if(adj && adj.rir && !e.test && !e.noEffort) rir = Math.min(4, rir + adj.rir);
       if(adj && adj.accDrop && isAcc && !e.test && !e.noEffort && sets > 1) sets = Math.max(1, sets - adj.accDrop);
       const rows = [];
-      if(!e.test) warmupsFor(e, w).forEach(x => rows.push({ type:'W', tw:x.w, tr:x.r, w:'', r:'', rir:null, done:false }));
-      const groups = e.test ? [{ sets: e.test === 'actual' ? 4 : 1, hi: e.test === 'actual' ? 1 : 5 }]
+      const testW = e.test === 'calc' && w > 0 ? w : null;   // a rep-max test with a planned weight gets its warm-ups
+      const att = e.test === 'actual' && e.tAtt ? e.tAtt : null;   // a true 1RM with a starting guess gets warm-ups and planned attempts
+      (e.test ? (testW ? testWarmups(testW) : att ? e.tWarm || [] : []) : warmupsFor(e, w)).forEach(x => rows.push({ type:'W', tw:x.w, tr:x.r, w:'', r:'', rir:null, done:false }));
+      const groups = e.test ? [{ sets: e.test === 'actual' ? (att ? att.length : 4) : 1, hi: e.test === 'actual' ? 1 : e.aim || 5 }]
         : (e.groups && e.groups.length > 1 && sets === e.sets) ? e.groups : [{ sets, lo:lowReps(e), hi:topReps(e), amrap: !!(e.groups && e.groups.length === 1 && e.groups[0].amrap) }];
-      groups.forEach(g => { for(let i = 0; i < g.sets; i++) rows.push({ type: g.amrap && i === g.sets - 1 ? 'A' : 'N', tw: e.test ? null : (w == null ? null : (g === groups[0] || e.added || e.noEffort || !(w > 0) ? w : roundLoad(w * (1 + (topReps(e) - g.hi) / 30)))), tr:g.hi,
+      groups.forEach(g => { for(let i = 0; i < g.sets; i++) rows.push({ type: g.amrap && i === g.sets - 1 ? 'A' : 'N', tw: e.test ? (att ? att[i] : testW) : (w == null ? null : (g === groups[0] || e.added || e.noEffort || !(w > 0) ? w : roundLoad(w * (1 + (topReps(e) - g.hi) / 30)))), tr:g.hi,
         ...(g.lo > 0 && g.lo < g.hi && !(g.amrap && i === g.sets - 1) ? { tlo:g.lo } : {}), w:'', r:'', rir:null, done:false }); });
       if(e.attempts){ let k = 0; rows.forEach(x => { if(x.type !== 'W' && e.attempts[k] != null) x.tw = e.attempts[k++]; }); }
       // pull-ups and dips done with a band last time start with the same band on every set
@@ -6198,7 +6205,7 @@ function startWorkoutState(day, score, prefs = {}){
       if(lastBand && BANDS[lastBand]) rows.forEach(x => { if(x.type !== 'W'){ x.band = lastBand; x.tw = 0; x.w = '0'; } });
       return { key:e.key || exKey(e), id:e.id, n:e.n, m:e.m, pattern:e.pattern, tech:e.test ? null : e.tech, bar:e.bar, each:e.each, added:e.added, rest: e.noRest ? 0 : restSeconds(e), trir:rir, test:e.test,
         ...(e.noEffort ? { noEffort:true } : {}), ...(exUnit(e.n) ? { dist:true, unit:exUnit(e.n) } : {}), ...(e.attempts ? { fixed:true } : {}),
-        target: e.test ? TEST_METHODS[e.test].todo : e.targetText || (rir == null ? setsReps({ ...e, sets }) : `${setsReps({ ...e, sets })} at ${eff(rir)}`), notes:e.notes, superset:e.superset, prev:e.last || [], sets:rows,
+        target: e.test ? (testW ? `As many reps as you can, aiming for about ${e.aim || 5}` : att ? 'Singles. Rate each one and Caliber picks the next weight' : TEST_METHODS[e.test].todo) : e.targetText || (rir == null ? setsReps({ ...e, sets }) : `${setsReps({ ...e, sets })} at ${eff(rir)}`), notes:e.notes, superset:e.superset, prev:e.last || [], sets:rows,
         oi, ss:ssLetter(e.superset), pr:!!(e.prChance && !(adj && adj.load)), hint:e.adaptNote || (lastBand && BANDS[lastBand] ? `Same ${BANDS[lastBand].label.toLowerCase()} band as last time. Tap the band on a set to change it.` : null), assist:isAssistable(e.n), subs:e.subs || [], hi:topReps(e), role:e.role, src:{ sets, reps:e.reps, repsLabel:e.repsLabel, groups:e.groups } };
     }) };
 }
@@ -7021,6 +7028,30 @@ function Logger({ ws, save, units, hist, msFor, onFinish, onDiscard, onMinimize,
   // After each working set: today's e1RM sets the load for the sets still to come
   function resuggest(st, ei){
     const ex = st.ex[ei];
+    // a true 1RM test: how the last single moved (reps left) picks the next attempt
+    if(ex.test === 'actual'){
+      const done = ex.sets.filter(x => x.done && isWorkType(x.type) && x.wl > 0), last = done[done.length - 1];
+      if(!last) return;
+      const lifted = last.wl, clean = done.filter(x => +x.r >= 1), best = clean.length ? Math.max(...clean.map(x => x.wl)) : null;
+      const rir = last.rir == null ? 0 : last.rir, open = ex.sets.filter(x => !x.done && isWorkType(x.type));
+      let next = null;
+      if(+last.r < 1){
+        if(best) ex.hint = `Missed. Your max is your best clean single, ${du(best)} ${units}. Stop here.`;
+        else { next = roundLoad(lifted * .95); ex.hint = `Missed. Rest 5 minutes and try ${du(next)} ${units}.`; }
+      } else if(rir < 1) ex.hint = `A grinder: ${du(lifted)} ${units} is your max. Stop here, since going past a grinder is where misses happen.`;
+      else {
+        next = attemptJump(lifted, rir >= 2, ['backsquat', 'deadlift'].includes(ex.id));
+        ex.hint = !open.length ? `Add a set for your next attempt: ${du(next)} ${units}.` : rir >= 2 ? `That moved fast. Next attempt: ${du(next)} ${units}.` : `Slowed down. A smaller jump next: ${du(next)} ${units}.`;
+      }
+      if(next) open.forEach(x => { x.tw = next; });
+      return;
+    }
+    // a rep-max test over 10 reps is a rough estimate: suggest a heavier set for about 5
+    if(ex.test === 'calc'){
+      const s = ex.sets.filter(x => x.done && isWorkType(x.type) && x.wl > 0).pop();
+      if(s && +s.r > 10) ex.hint = `Over 10 reps gives a rough estimate. For a closer one, rest 5 minutes, add a set and try ${du(roundLoad(setE1rm({ w:s.wl, r:+s.r, rir:s.rir }, 0) / (1 + 5 / 30)))} ${units} for about 5.`;
+      return;
+    }
     if(ex.added || ex.test || ex.fixed || ex.noEffort || ex.dist) return;
     const done = ex.sets.filter(x => x.done && (isWorkType(x.type)) && x.wl > 0);
     if(!done.length) return;
@@ -10718,48 +10749,206 @@ function TrainingSheet({ settings, units, importedProgram, onSave, onSaveQuiet, 
 const TEST_IDS = { backsquat:'squat', bench:'bench', deadlift:'deadlift', ohp:'ohp' };
 const TEST_METHODS = {
   actual:{ label:'True 1RM', short:'1RM test', todo:'Work up to a heavy single',
-    about:'Work up to the heaviest single you can lift cleanly. The most accurate number, but it’s demanding: use safety bars or a spotter.',
-    steps:['Empty bar for 10, then 5 reps','About half your best guess for 5','About 70% for 3','About 80% for 1, then about 90% for 1',
-      'Singles, adding 5–10 lb (2.5–5 kg) each time, resting 3–5 minutes','Stop when a single is slow but clean. Don’t chase a rep you might miss.'] },
-  calc:{ label:'Calculated 1RM', short:'Rep-max test', todo:'Work up to one hard set of 3–8',
-    about:'Do one hard set of 3–8 reps and Caliber estimates your max. Safer and less tiring, usually within about 5% of a true 1RM.',
-    steps:['Empty bar for 10, then 5 reps','About half your best guess for 5','About 70% for 3',
-      'Pick a weight you can lift 3–8 times','Do as many clean reps as you can, stopping when the next one would fail'] }
+    about:'Caliber coaches you up to the heaviest single you can lift cleanly, picking each attempt from how the last one moved. The most accurate number, but it’s demanding: use safety bars or a spotter.',
+    steps:['Do the warm-ups shown, resting 2–3 minutes between them','Your first attempt is about 90% of your max. Rest 3–5 minutes between attempts',
+      'After each single, rate the reps you had left: 2 if it moved fast, 1 if it slowed (the default), 0 for a grinder','Caliber sets your next attempt from that rating',
+      'Stop after a grinder or a miss. Your heaviest clean single is your max','Use safety bars or a spotter'] },
+  calc:{ label:'Calculated 1RM', short:'Rep-max test', todo:'One hard set, as many reps as you can',
+    about:'Caliber picks your warm-ups and one test weight, you do as many reps as you can, and it works out your max. Safer and less tiring than a true 1RM, usually within about 5%.',
+    steps:['Do the warm-ups shown, resting 1–2 minutes between them','Rest about 3 minutes',
+      'Do as many clean reps as you can at the test weight, aiming for about 5','Stop when the next rep would fail, then log your reps',
+      'Got more than 10? Rest 5 minutes and try a heavier set'] }
 };
-function MaxTestSheet({ lift, method, units, onSave, onClose }){
+const TEST_LIFT_ID = { squat:'backsquat', bench:'bench', deadlift:'deadlift', ohp:'ohp' };
+/* Where a max test starts, best first: your logged sets for the lift (last 4 months), your saved max, then a guess
+   from bodyweight and experience. -> [{ v:'log'|'max'|'bw', lb, top?, date? }] */
+function maxGuesses(lift, hist, settings, bwLb){
+  const h = hist && hist[TEST_LIFT_ID[lift]], i = Math.max(0, MAIN_LIFTS.findIndex(x => x[0] === lift)), out = [];
+  if(h && h.recent && h.recent.e1rm > 0 && h.recent.date >= addDays(localDate(), -120))
+    out.push({ v:'log', lb:h.recent.e1rm, top:h.series.length ? h.series[h.series.length - 1].top : null, date:h.recent.date });
+  if(settings.maxes && settings.maxes[lift] > 0) out.push({ v:'max', lb:settings.maxes[lift] });
+  out.push({ v:'bw', lb:Math.round((bwLb || 165) * MAX_RATIO[levelOf(settings)][i] / 5) * 5 });
+  return out;
+}
+// The rep-max test weight: one you can lift about 5 times, or about 8 when the start is only a bodyweight guess
+const testAim = g => g.v === 'bw' ? 8 : 5;
+const testLoad = g => roundLoad(g.lb / (1 + testAim(g) / 30));
+// A rep-max test with a set of 10 or fewer reps leaves rougher sets of more than 10 out of the result
+function testSets(e){
+  const ok = x => isWorkType(x.type) && x.w > 0 && x.r >= 1 && x.r <= 10;
+  return e.test === 'calc' && e.sets.some(ok) ? e.sets.filter(x => !isWorkType(x.type) || x.r <= 10) : e.sets;
+}
+function testWarmups(w){ return w >= 95 ? warmupsFor({ bar:true }, w) : w > 55 ? [{ w:45, r:10 }] : []; }
+/* True 1RM: warm-ups to about 80% of the guess, an opener at 90%, then attempts picked by how each single moves.
+   Fast adds about 5% (at least 10 lb on squat and deadlift, 5 lb otherwise), slowed about 2.5% (at least 5 lb). */
+function maxWarmups(g){
+  const out = [];
+  [[45,10],[g * .5,5],[g * .7,3],[g * .8,1]].forEach(([x, r]) => {
+    const v = Math.max(45, fitPlates(roundLoad(x)));
+    if(v < roundLoad(g * .9) && !out.some(o => o.w === v)) out.push({ w:v, r });
+  });
+  return out;
+}
+const testAttempts = g => [.9, .95, 1].map(p => roundLoad(g * p));
+const attemptJump = (lifted, fast, lower) => roundLoad(lifted + Math.max(lifted * (fast ? .05 : .025), fast && lower ? 10 : 5));
+// The max a test sets: a true 1RM is the heaviest clean single (more reps count at full effort); a rep-max test is its estimate
+function testResult(e){
+  if(e.test === 'actual') return Math.max(0, ...e.sets.filter(x => isWorkType(x.type)).map(x => setE1rm({ ...x, rir:0 }, 0)));
+  return bestE1rm(testSets(e), e.trir);
+}
+function MaxTestSheet({ lift, method, units, hist, settings, bwLb, onSave, onClose }){
   const [m, setM] = useState(method || 'calc');
+  const label = (MAIN_LIFTS.find(x => x[0] === lift) || [lift, lift])[1];
+  const u = v => toUnit(v, units), toLb = v => units === 'kg' ? v / KG : v;
+  const guesses = maxGuesses(lift, hist, settings, bwLb);
+  const [src, setSrc] = useState(guesses[0].v);
+  const [kw, setKw] = useState(''), [kr, setKr] = useState('');   // a recent heavy set you know
+  const [plan, setPlan] = useState(null);   // { lb: the starting guess, aim and load for a rep-max } once you've picked a starting point
+  const [warmDone, setWarmDone] = useState([]);
+  const [first, setFirst] = useState(null);   // rep-max: the first set, kept when you try a heavier one
+  const [atts, setAtts] = useState([]);   // true 1RM: the attempts so far, { w (lb), feel }
+  const [restEnd, setRestEnd] = useState(null);
+  const [now, setNow] = useState(Date.now());
   const [w, setW] = useState('');
   const [reps, setReps] = useState('');
   const [rir, setRir] = useState(0);
-  const label = (MAIN_LIFTS.find(x => x[0] === lift) || [lift, lift])[1];
-  const wl = parseFloat(w) > 0 ? (units === 'kg' ? parseFloat(w) / KG : parseFloat(w)) : null;
+  const top = useRef(null);   // each step opens at the top of the sheet
+  useEffect(() => { const sh = top.current && top.current.closest('.sheet'); if(sh) sh.scrollTop = 0; }, [plan, first]);
+  useEffect(() => {
+    if(!restEnd) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [restEnd]);
+  const kwN = parseFloat(kw), krN = parseInt(kr, 10);
+  const known = kwN > 0 && krN >= 1 && krN <= 12 ? { v:'set', lb:toLb(kwN) * (krN > 1 ? 1 + krN / 30 : 1) } : null;
+  const g = src === 'set' ? known : guesses.find(x => x.v === src);
+  const wl = parseFloat(w) > 0 ? toLb(parseFloat(w)) : null;
   const r = parseInt(reps, 10);
-  const est = !wl ? null : m === 'actual' ? wl : (r >= 1 && r <= 15 ? (r === 1 && rir === 0 ? wl : wl * (1 + (r + rir) / 30)) : null);
-  const t = TEST_METHODS[m];
-  return html`<${Sheet} title=${`Find your ${label.toLowerCase()} max`} sub="Your loads for this lift are calculated from it." onClose=${onClose}>
-    <${Seg} wide label="Test type" value=${m} onChange=${setM} options=${Object.entries(TEST_METHODS).map(([v, x]) => ({ v, l:x.label }))}/>
-    <p className="note" style=${{marginBottom:14}}>${t.about}</p>
-    <div className="list">${t.steps.map((st, i) => html`<div className="row" key=${i}>
-      <span className="idx num">${i + 1}</span><span className="row-main"><span className="row-title" style=${{whiteSpace:'normal',fontWeight:500}}>${st}</span></span></div>`)}</div>
-    <div className="section-head" style=${{margin:'22px 4px 8px'}}><h2>Your result</h2></div>
-    <div className="list">
-      <label className="setting"><span>${m === 'actual' ? 'Heaviest clean single' : 'Weight'}</span>
-        <input className="numin num" type="number" inputMode="decimal" min="0" placeholder=${units} value=${w} onChange=${e => setW(e.target.value)}/></label>
-      ${m === 'calc' && html`<label className="setting"><span>Reps completed</span>
-        <input className="numin num" type="number" inputMode="numeric" min="1" max="15" placeholder="reps" value=${reps} onChange=${e => setReps(e.target.value)}/></label>`}
-      ${m === 'calc' && html`<div className="setting"><span>Reps left in the tank</span>
-        <${Seg} label="Reps left" value=${rir} onChange=${setRir} options=${[0,1,2].map(v => ({ v, l:String(v) }))}/></div>`}
-    </div>
-    ${parseFloat(w) > 0 && html`<div className="panel platemath" style=${{marginTop:12}}>
+  const est = !wl ? null : r >= 1 && r <= 15 ? (r === 1 && rir === 0 ? wl : wl * (1 + (r + rir) / 30)) : null;
+  const title = `Find your ${label.toLowerCase()} max`;
+  const start = () => {
+    const actual = m === 'actual';
+    setPlan({ lb:g.lb, aim:testAim(g), load:testLoad(g) }); setW(String(u(actual ? testAttempts(g.lb)[0] : testLoad(g))));
+    setWarmDone([]); setFirst(null); setAtts([]); setRestEnd(null); setReps(''); setRir(0);
+  };
+  const pickM = v => { setM(v); setPlan(null); };
+  const plates = parseFloat(w) > 0 && html`<div className="panel platemath" style=${{marginTop:12}}>
       <${Barbell} total=${parseFloat(w)} units=${units}/>
       <div className="hero-foot" style=${{marginTop:0}}><span>${parseFloat(w)} ${units}</span><span>${plateSummary(parseFloat(w), units)}</span></div>
-    </div>`}
-    ${m === 'calc' && r > 10 && html`<p className="note">Sets over 10 reps make a rougher estimate. A heavier set of 3–8 is better.</p>`}
-    <div className="panel" style=${{display:'flex',alignItems:'baseline',gap:10,margin:'16px 0'}}>
-      <span className="muted small">Estimated 1RM</span>
-      <span className="num big" style=${{fontSize:40,marginLeft:'auto'}}>${est ? toUnit(roundLoad(est), units) : '—'}</span><span className="muted">${units}</span>
+    </div>`;
+  const result = (best, head) => html`<div className="panel" style=${{display:'flex',alignItems:'baseline',gap:10,margin:'16px 0'}}>
+      <span className="muted small">${head}</span>
+      <span className="num big" style=${{fontSize:40,marginLeft:'auto'}}>${best ? u(roundLoad(best)) : '—'}</span><span className="muted">${units}</span>
     </div>
-    <${SheetButton} className="btn primary block" disabled=${!est} onClick=${() => onSave(lift, Math.round(est))}><${Icon} name="check"/> Save and update loads</${SheetButton}>
+    <${SheetButton} className="btn primary block" disabled=${!best} onClick=${() => onSave(lift, Math.round(best))}><${Icon} name="check"/> Save and update loads</${SheetButton}>`;
+  const warmList = list => list.length > 0 && html`<${Fragment}>
+      <div className="section-head" style=${{margin:'0 4px 8px'}}><h2>Warm up</h2><span>Rest 1–2 min between</span></div>
+      <div className="list">${list.map((x, i) => { const on = warmDone.includes(i); return html`<button key=${i} className="row" aria-pressed=${on}
+          onClick=${() => setWarmDone(d => d.includes(i) ? d.filter(y => y !== i) : [...d, i])}>
+        <span className="idx num" style=${on ? {background:'var(--accent-fill)',color:'var(--bg)'} : null}>${on ? html`<${Icon} name="check"/>` : i + 1}</span>
+        <span className="row-main"><span className="row-title" style=${{display:'block'}}>${u(x.w)} ${units} × ${x.r}</span><span className="row-sub" style=${{display:'block'}}>${plateSummary(u(x.w), units)}</span></span>
+      </button>`; })}</div>
+    </${Fragment}>`;
+
+  // Step 1, either test: where to start
+  if(!plan){
+    const card = (v, t, sub) => html`<button key=${v} className="ocard" aria-pressed=${src === v} onClick=${() => setSrc(v)}><b>${t}</b><span>${sub}</span></button>`;
+    const when = d => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' });
+    return html`<${Sheet} title=${title} sub=${m === 'actual' ? 'Caliber plans your warm-ups and coaches each attempt.' : 'Caliber plans your warm-ups and one test set.'} onClose=${onClose}>
+      <div ref=${top}><${Seg} wide label="Test type" value=${m} onChange=${pickM} options=${Object.entries(TEST_METHODS).map(([v, x]) => ({ v, l:x.label }))}/></div>
+      <p className="note" style=${{marginBottom:0}}>${TEST_METHODS[m].about}</p>
+      <div className="section-head" style=${{margin:'18px 4px 8px'}}><h2>Where should we start?</h2></div>
+      <div className="ocards">
+        ${guesses.map(x => x.v === 'log' ? card('log', 'From your logs', x.top ? `${u(x.top.w)} ${units} × ${x.top.r} on ${when(x.date)}` : `Logged ${when(x.date)}`)
+          : x.v === 'max' ? card('max', settings.maxesEst ? 'Your setup estimate' : 'Your saved max', `${u(x.lb)} ${units}`)
+          : null)}
+        ${card('set', 'A recent heavy set', 'Any set of 1 to 12 reps from the last few months.')}
+        ${src === 'set' && html`<div className="list">
+          <label className="setting"><span>Weight</span><input className="numin num" type="number" inputMode="decimal" min="0" placeholder=${units} value=${kw} onChange=${e => setKw(e.target.value)}/></label>
+          <label className="setting"><span>Reps</span><input className="numin num" type="number" inputMode="numeric" min="1" max="12" placeholder="reps" value=${kr} onChange=${e => setKr(e.target.value)}/></label>
+        </div>`}
+        ${card('bw', 'Not sure', bwLb ? `A cautious guess from your ${u(bwLb)} ${units} bodyweight and experience.` : 'A cautious guess from your experience. Log your body weight for a closer one.')}
+      </div>
+      ${m === 'actual' && src === 'bw' && html`<p className="note">Without a recent heavy set, a calculated 1RM is the safer first test.</p>`}
+      <div className="panel" style=${{display:'flex',alignItems:'baseline',gap:10,margin:'16px 0'}}>
+        <span className="muted small">Starting estimate</span>
+        <span className="num" style=${{fontSize:28,marginLeft:'auto'}}>${g ? `≈ ${u(roundLoad(g.lb))}` : '—'}</span><span className="muted">${units}</span>
+      </div>
+      <button className="btn primary block" disabled=${!g} onClick=${start}><${Icon} name="chev"/> Plan my warm-ups</button>
+    </${Sheet}>`;
+  }
+  const back = html`<button className="link" ref=${top} style=${{marginBottom:12}} onClick=${() => setPlan(null)}>← Change starting point</button>`;
+
+  // True 1RM: warm-ups, then one attempt at a time, each picked from how the last one moved
+  if(m === 'actual'){
+    const lower = lift === 'squat' || lift === 'deadlift';
+    const clean = atts.filter(a => a.feel !== 'miss'), best = clean.length ? Math.max(...clean.map(a => a.w)) : null;
+    const last = atts[atts.length - 1];
+    const over = !!last && (last.feel === 'grind' || (last.feel === 'miss' && best) || atts.length >= 6);
+    const rest = restEnd && restEnd > now ? Math.ceil((restEnd - now) / 1000) : 0;
+    const FEEL = { fast:'Fast', slow:'Slowed down', grind:'Grinder', miss:'Missed' };
+    const rate = feel => {
+      if(!wl) return;
+      const list = [...atts, { w:wl, feel }], ok = list.filter(a => a.feel !== 'miss');
+      setAtts(list);
+      const nx = feel === 'fast' || feel === 'slow' ? attemptJump(wl, feel === 'fast', lower) : feel === 'miss' && !ok.length ? roundLoad(wl * .95) : null;
+      if(nx){ setW(String(u(nx))); setRestEnd(Date.now() + (feel === 'miss' ? 300 : 240) * 1000); setNow(Date.now()); }
+      else setRestEnd(null);
+    };
+    const undo = () => { setW(String(u(last.w))); setAtts(atts.slice(0, -1)); setRestEnd(null); };
+    return html`<${Sheet} title=${title} sub="Tick off each warm-up, then rate each attempt." onClose=${onClose}>
+      ${back}
+      ${warmList(maxWarmups(plan.lb))}
+      ${atts.length > 0 && html`<${Fragment}>
+        <div className="section-head" style=${{margin:'20px 4px 8px'}}><h2>Attempts</h2>${!over && html`<button className="link" onClick=${undo}>Undo last</button>`}</div>
+        <div className="list">${atts.map((a, i) => html`<div className="row" key=${i}>
+          <span className="idx num">${i + 1}</span>
+          <span className="row-main"><span className="row-title" style=${{display:'block',textDecoration:a.feel === 'miss' ? 'line-through' : 'none'}}>${u(a.w)} ${units}</span></span>
+          <span className="muted small">${FEEL[a.feel]}</span></div>`)}</div>
+      </${Fragment}>`}
+      ${!over && html`<${Fragment}>
+        <div className="section-head" style=${{margin:'20px 4px 8px'}}><h2>${atts.length ? `Attempt ${atts.length + 1}` : 'Your opener'}</h2>
+          <span className="num">${rest ? `Rest ${Math.floor(rest / 60)}:${String(rest % 60).padStart(2, '0')}` : atts.length ? 'Ready when you are' : 'Rest 3 min first'}</span></div>
+        ${plates}
+        <div className="list" style=${{marginTop:12}}><label className="setting"><span>Weight</span>
+          <input className="numin num" type="number" inputMode="decimal" min="0" placeholder=${units} value=${w} onChange=${e => setW(e.target.value)}/></label></div>
+        <p className="note">${atts.length ? 'One clean single.' : 'About 90% of your max: it should feel solid.'} Then tap how it moved.</p>
+        <div style=${{display:'grid',gridTemplateColumns:'repeat(2,minmax(0,1fr))',gap:8}}>
+          ${Object.entries(FEEL).map(([k, l]) => html`<button key=${k} className="btn secondary" style=${{height:48}} disabled=${!wl} onClick=${() => rate(k)}>${l}</button>`)}
+        </div>
+        <p className="note">Fast: the bar never slowed. Slowed down: solid, but slower. Grinder: you barely made it.</p>
+      </${Fragment}>`}
+      ${over && html`<p className="note" style=${{marginTop:14}}>${last.feel === 'grind' ? 'That was a grinder, so stop there: going past one is where misses happen.'
+        : last.feel === 'miss' ? 'Your max is your heaviest clean single.' : 'That’s plenty of attempts for one day.'}
+        <button className="link" style=${{marginLeft:6}} onClick=${undo}>Undo last</button></p>`}
+      ${(over || best) && result(best, over ? 'Your 1RM' : 'Best so far')}
+    </${Sheet}>`;
+  }
+
+  // Rep-max: warm-ups you tick off, then the test set and your reps
+  const heavier = est ? roundLoad(est / (1 + 5 / 30)) : null;
+  // after a set of more than 10, a heavier set of 10 or fewer gives the closer estimate
+  const best = !first ? est : est && r <= 10 ? est : Math.max(est || 0, first.est);
+  return html`<${Sheet} title=${title} sub="Tick off each warm-up, then do your test set." onClose=${onClose}>
+    ${back}
+    ${warmList(testWarmups(plan.load))}
+    <div className="section-head" style=${{margin:'20px 4px 8px'}}><h2>${first ? 'Your heavier set' : 'Your test set'}</h2><span>${first ? 'Rest 5 min first' : 'Rest 3 min first'}</span></div>
+    ${plates}
+    <p className="note">${first ? 'As many clean reps as you can, aiming for about 5.' : `As many clean reps as you can, aiming for about ${plan.aim}.`} Stop when the next rep would fail, not on a grind you might miss.</p>
+    <div className="list">
+      <label className="setting"><span>Weight</span>
+        <input className="numin num" type="number" inputMode="decimal" min="0" placeholder=${units} value=${w} onChange=${e => setW(e.target.value)}/></label>
+      <label className="setting"><span>Reps completed</span>
+        <input className="numin num" type="number" inputMode="numeric" min="1" max="15" placeholder="reps" value=${reps} onChange=${e => setReps(e.target.value)}/></label>
+      <div className="setting"><span>Reps left in the tank</span>
+        <${Seg} label="Reps left" value=${rir} onChange=${setRir} options=${[0,1,2].map(v => ({ v, l:String(v) }))}/></div>
+    </div>
+    ${first && html`<p className="note">First set: ${first.w} ${units} × ${first.r}, about ${u(roundLoad(first.est))} ${units}. The heavier set gives the closer estimate.</p>`}
+    ${r > 10 && !first && html`<div className="panel" style=${{marginTop:12}}>
+      <p className="note" style=${{marginTop:0}}>More than 10 reps gives a rough estimate. For a closer one, rest 5 minutes and try ${u(heavier)} ${units} for about 5.</p>
+      <button className="btn secondary block" onClick=${() => { setFirst({ w:parseFloat(w), r, est }); setW(String(u(heavier))); setReps(''); setRir(0); }}>Try ${u(heavier)} ${units}</button>
+    </div>`}
+    ${result(best, 'Estimated 1RM')}
   </${Sheet}>`;
 }
 
@@ -11663,7 +11852,7 @@ function App(){
     return true;
   }
   useEffect(() => {
-    if(sheet?.type === 'tour'){ setSheet(null); setTourOpen(true); }
+    if(sheet?.type === 'tour'){ setSheet(null); setTourOpen('full'); }
     if(sheet?.type === 'onboard'){ setSheet(null); setOnbFirst(false); setOnbOpen(true); }
   }, [sheet]);
   const [toastMsg, setToastMsg] = useState(null);
@@ -11793,13 +11982,16 @@ function App(){
   // Lifts with a pending max test show the test instead of working sets until a result is saved
   const tests = settings.tests || {};
   const pendingTests = prog ? [] : Object.entries(tests);
+  // a pending rep-max test starts from the best guess at that max
+  const testGuess = k => { const p = bwTrend(bw); return maxGuesses(k, hist, settings, p.length ? p[p.length - 1].t : null)[0]; };
   const [sessionNames, setSessionNames] = useState(() => store.get('sessionNames', {}));
   const nameKey = d => prog ? `imp:${d.origName || d.name}` : d.id;
   const withName = d => sessionNames[nameKey(d)] ? { ...d, origName:d.origName || d.name, name:sessionNames[nameKey(d)] } : d;
   const programTitle = prog ? (imported.name || 'Program') : (settings.programName || 'Program');
   const sessions = (prog ? (prog.weeks.find(w => w.week === importWeek) || prog.weeks[0]).days.map(d => annotate(d, hist, settings, false, units))
     : plan.weeks[planIdx].days.map(d => d.ex.some(e => tests[TEST_IDS[e.id]])
-      ? { ...d, ex:d.ex.map(e => tests[TEST_IDS[e.id]] ? { ...e, test:tests[TEST_IDS[e.id]] } : e) } : d).map(d => annotate(d, hist, settings, true, units))).map(withName);
+      ? { ...d, ex:d.ex.map(e => { const k = TEST_IDS[e.id], m = tests[k]; return m ? { ...e, test:m, guess:testGuess(k) } : e; }) } : d)
+      .map(d => annotate(d, hist, settings, true, units))).map(withName);
   const limits = prog ? { min:1, max:Math.min(6, Math.max(...prog.weeks.map(w => w.days.length))) } : { min:MIN_LIFTS, max:MAX_LIFTS };
   const wkKey = weekKey();
   const [overrides, setOverrides] = useState(store.get('overrides', {}));
@@ -12278,7 +12470,7 @@ function App(){
     const notes = [];
     entry.ex.forEach(e => {
       const k = TEST_IDS[e.id]; if(!k) return;
-      const b = Math.round(bestE1rm(e.sets, e.trir)); if(!b) return;
+      const b = Math.round(testResult(e)); if(!b) return;
       if(st.tests[k]){ st.maxes[k] = b; delete st.tests[k]; notes.push(`${e.n} max set to ${toUnit(roundLoad(b), units)}`); }
       else if(!st.maxes[k] || b > st.maxes[k]){ st.maxes[k] = b; notes.push(`${e.n} max up to ${toUnit(roundLoad(b), units)}`); }
     });
@@ -12440,6 +12632,8 @@ function App(){
       if(to === 'food'){ store.set('progTab', 'food'); setScreenKey(k => k + 1); setSheet(null); go('progress'); window.scrollTo(0, 0); }
       else if(to === 'week'){ setSheet(null); go('program'); setTimeout(() => { const el = document.getElementById('your-week'); if(el) el.scrollIntoView({ block:'start', behavior:'smooth' }); }, 350); }
       else if(to === 'today'){ setSheet(null); go('today'); window.scrollTo(0, 0); }
+      // a friend alert: Friends, where the request or new friend is waiting
+      else if(to === 'friends'){ go('profile'); setSheet({ type:'friends' }); }
       // an invite (caliber://friend/<code>, or the caliberperpetual.com/add page): Add friends with the code filled in
       else if(to && to.startsWith('friend:')){
         const c = to.slice(7);
@@ -12632,6 +12826,19 @@ Reply with only a JSON object and nothing else: {"label": short food name, "serv
     return () => document.removeEventListener('visibilitychange', f);
   }, [FR, social.joined]);
   const friendsOpen = sheet && ['friends', 'addFriend', 'compare'].includes(sheet.type);
+  // Friend alerts: once you're in Friends, this phone's push token goes to your account with friend alerts on or off.
+  // iPhone's permission prompt shows the first time you open Friends (or turn the alerts on), never at launch.
+  const friendPush = !(settings.notify && settings.notify.friends === false), notifyOpen = sheet && sheet.type === 'notify';
+  useEffect(() => {
+    const S = window.caliberNative && window.caliberNative.system;
+    if(!S || !S.push || !FR || !FR.pushRegister || !social.joined) return;
+    const ask = friendPush && (friendsOpen || notifyOpen) && !store.get('pushAsked', false);
+    S.push(ask).then(r => {
+      if(ask) store.set('pushAsked', true);
+      if(r && r.token) return FR.pushRegister(r.token, r.env, friendPush);
+      if(r && r.granted === false && notifyOpen && friendPush) setNotifyDenied(true);
+    }).catch(() => {});
+  }, [FR, social.joined, friendPush, friendsOpen, notifyOpen]);
   useEffect(() => {
     if(!FR || !social.joined || !friendsOpen) return;
     let t = null;
@@ -13106,13 +13313,13 @@ Reply with only a JSON object and nothing else: {"label": short food name, "serv
       }}/>`;
   if(sheet?.type === 'calDay') sheetEl = html`<${DaySheet} date=${sheet.date} logs=${logs} planned=${plannedFor(sheet.date)} bw=${bw} units=${units}
       onOpenLog=${id => setSheet({ type:'log', id })} onClose=${close}/>`;
-  if(sheet?.type === 'maxTest') sheetEl = html`<${MaxTestSheet} lift=${sheet.lift} method=${sheet.method} units=${units} onSave=${saveMaxResult} onClose=${close}/>`;
+  if(sheet?.type === 'maxTest') sheetEl = html`<${MaxTestSheet} lift=${sheet.lift} method=${sheet.method} units=${units} hist=${hist} settings=${settings} bwLb=${bwNow} onSave=${saveMaxResult} onClose=${close}/>`;
   if(sheet?.type === 'exercise') sheetEl = html`<${ExerciseSheet} ex=${sheet.ex} units=${units} onClose=${close}
       onTest=${sheet.ex.test ? () => setSheet({ type:'maxTest', lift:TEST_IDS[sheet.ex.id], method:sheet.ex.test }) : null}
       onSwap=${sheet.loc ? () => setSheet({ type:'swap', ex:sheet.ex, loc:sheet.loc }) : null}/>`;
   if(sheet?.type === 'swap') sheetEl = html`<${SwapSheet} ex=${sheet.ex} options=${swapOptions(sheet.ex)} units=${units} imported=${!!prog} onAddMine=${addMine}
       onPick=${(o, scope) => applySwap(sheet.ex, sheet.loc, o, scope)} onClose=${close}/>`;
-  if(sheet?.type === 'notify') sheetEl = html`<${NotifySheet} notify=${settings.notify || null} denied=${notifyDenied} onClose=${close}
+  if(sheet?.type === 'notify') sheetEl = html`<${NotifySheet} notify=${settings.notify || null} denied=${notifyDenied} friends=${!!(social.joined && window.caliberNative && window.caliberNative.system && window.caliberNative.system.push)} onClose=${close}
       onSave=${n => { setNotifyDenied(false); saveSettings({ ...settings, notify:n }); }}/>`;
   if(sheet?.type === 'readiness') sheetEl = html`<${ReadinessSheet} initial=${readinessToday} onClose=${close}
       health=${settings.health || null} onHealth=${h => saveSettings({ ...settings, health:h })}
@@ -13192,7 +13399,7 @@ Reply with only a JSON object and nothing else: {"label": short food name, "serv
         onDiscard=${() => tourDemo(false)} onMinimize=${() => tourDemo(false)}/>
         <div style=${{position:'fixed',left:'50%',transform:'translateX(-50%)',bottom:'calc(env(safe-area-inset-bottom,0px) + 96px)',zIndex:35,
           background:'var(--accent)',color:'#111',fontWeight:700,fontSize:13,padding:'6px 12px',borderRadius:99,pointerEvents:'none'}}>Sample workout · not saved</div>`}
-      ${tourOpen && html`<${GuidedTour} beginner=${settings.experience === 'beginner'} onGo=${t => { if(tab !== t) go(t); }} onDemo=${tourDemo}
+      ${tourOpen && html`<${GuidedTour} full=${tourOpen === 'full'} beginner=${settings.experience === 'beginner'} onGo=${t => { if(tab !== t) go(t); }} onDemo=${tourDemo}
         onClose=${() => { tourDemo(false); setTourOpen(false); go('today'); window.scrollTo(0, 0); }}/>`}
       ${cardio && cardioOpen && html`<${CardioSession} s=${cardio} save=${saveCardio} age=${ageFrom((settings.profile || {}).birth)} liveHr=${liveHr} gps=${liveGps} units=${units}
         onMinimize=${() => setCardioOpen(false)} onFinish=${finishCardio} onDiscard=${discardCardio}/>`}
