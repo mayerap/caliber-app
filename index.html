@@ -3411,6 +3411,7 @@ const GUIDE = [
   { tab:'today', sel:'.cta', opt:1, t:'Start your workout', d:'This opens the workout logger. Next, a sample workout so you can see how it works. Nothing in it is saved.' },
   { demo:1, sel:'.logger .lg-head', opt:1, t:'The workout logger', d:'This is a sample; nothing here is saved. Up top: your time and sets done, plus pause, focus mode (one exercise at a time) and Finish.' },
   { demo:1, find:() => [...document.querySelectorAll('.logger .lg-card')].find(c => c.querySelector('[aria-label^="Swap "]')), opt:1, t:'One card per exercise', d:'Target sets, reps, effort and weight. The arrows button swaps the exercise for another; the link button pairs it into a superset. In a superset, once a set is logged and rated, Caliber jumps to the other exercise.' },
+  { demo:1, find:() => [...document.querySelectorAll('.logger button')].find(b => b.textContent.trim() === 'Add exercise'), opt:1, t:'Add an exercise', d:'Want one more? Add exercise, below the last card, adds any exercise to this workout only, with a starting weight from your history. Your program stays the same.' },
   { demo:1, sel:'.logger .lg-pm', opt:1, t:'Plate math', d:'For barbell lifts: exactly what goes on each side of the bar for the set you’re on.' },
   { demo:1, sel:'.logger .lg-row.next', opt:1, t:'Log a set', d:'Weight and reps are already filled in. Tap a number to change it, then tap the check. Tap the set number to change its type: W for warm-up, A for AMRAP (as many reps as you can), D for a drop set, F for to failure.' },
   { demo:1, t:'Rep ranges', d:'A target like 8–10 is a rep range. Keep the same weight until you reach the top of the range on every set; then Caliber adds weight next time. A set below the range holds the weight where it is.' },
@@ -3430,7 +3431,9 @@ const GUIDE = [
   { tab:'program', sel:'.import', opt:1, t:'Bring your own program', d:'Already have a program? Import a spreadsheet, or let Claude read a photo, PDF or pasted text. A screenshot of a single workout, like today’s WOD, loads as a workout to do now. Imported programs stay on a week until you move to the next one: tap it on the Program tab.' },
   { tab:'program', sel:'[data-tour="exlib"]', opt:1, t:'Exercise library', d:'Search every exercise, from squats to sled pushes, and see how to do it: the main lifts have a video with the working muscles highlighted, the rest a moving figure. Plus what it works and what you need. Not there? Add your own exercise and ask for it to be added. When it is, Today tells you and moves your sets over to it.' },
   { tab:'program', sel:'[data-tour="wods"]', opt:1, t:'Free workouts', d:'8- and 12-week race plans for HYROX-format events, Hero workouts, benchmarks, and challenges like the 1,000 lb club. Load any workout into today and check off the sets as you go. There’s also a link to today’s workout on CrossFit.com.' },
+  { tab:'history', t:'History', d:'Every workout you’ve finished. Tap one to see each set, share it, or fix a weight or reps you got wrong with Edit workout. Totals and PRs update when you save.' },
   { tab:'progress', find:() => { const x = document.querySelector('[aria-label="Progress view"]'); return x && x.parentElement; }, t:'Progress', d:'Strength, body weight, food and training trends, each on its own tab.' },
+  { tab:'progress', before:() => { const b = [...document.querySelectorAll('[aria-label="Progress view"] button')].find(x => x.textContent.trim() === 'Food'); b && b.click(); }, find:() => { const x = document.querySelector('[aria-label="Previous day"]'); return x && x.parentElement; }, opt:1, t:'Forgot to log a meal?', d:'On Food, the arrows step back up to two weeks so you can fill in a day you missed. It always opens on today.' },
   { tab:'progress', before:() => { const b = [...document.querySelectorAll('[aria-label="Progress view"] button')].find(x => x.textContent.trim() === 'Strength'); b && b.click(); }, sel:'[data-tour="caliber"]', opt:1, t:'Your Caliber', d:'One number for your overall strength: your best squat, bench, deadlift and press relative to body weight. It climbs as you get stronger.' },
   { tab:'progress', find:byHeading('Milestones'), opt:1, t:'Milestones', d:'Workout numbers, plate clubs, body-weight lifts, total weight lifted, streaks and the 1,000 lb club (squat, bench and deadlift in one workout). Tap one to see them all.' },
   { tab:'progress', sel:'[data-tour="board"]', opt:1, t:'Leaderboard', d:'Opt in to see where your Caliber ranks against other lifters, split by men and women and by age bracket like a powerlifting meet. Only lifts you log in Caliber count, and it updates live.' },
@@ -4524,7 +4527,8 @@ function NutritionSetupSheet({ nut, units, preview, onSave, onOff, onClose }){
   </${Sheet}>`;
 }
 
-function AddFoodSheet({ myFoods, onAdd, onAddMany, onRemoveSaved, estimate, analyze, canPhoto, initialMeal, onClose }){
+function AddFoodSheet({ myFoods, onAdd, onAddMany, onRemoveSaved, estimate, analyze, canPhoto, initialMeal, onClose, date }){
+  const pastDay = date && date !== localDate() ? new Date(date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' }) : null;
   const [q, setQ] = useState('');
   const [meal, setMeal] = useState(initialMeal || mealNow());
   const [ai, setAi] = useState(null);      // { mode:'describe'|'photo', text, busy, err, items }
@@ -4596,7 +4600,7 @@ function AddFoodSheet({ myFoods, onAdd, onAddMany, onRemoveSaved, estimate, anal
     <input ref=${photoRef} type="file" accept="image/*" capture="environment" style=${{display:'none'}} onChange=${onPhoto}/>
   </${Sheet}>`;
 
-  return html`<${Sheet} title="Add food" sub=${sel ? null : 'Search, or pick from foods you’ve logged.'} onClose=${onClose}>
+  return html`<${Sheet} title=${pastDay ? `Add food to ${pastDay}` : 'Add food'} sub=${sel ? null : 'Search, or pick from foods you’ve logged.'} onClose=${onClose}>
     ${mealPicker}
     ${analyze && !q.trim() && !sel && html`<div className="ai-row">
       ${canPhoto && html`<button className="callout" style=${{margin:0}} onClick=${() => photoRef.current && photoRef.current.click()}>
@@ -4625,7 +4629,7 @@ function AddFoodSheet({ myFoods, onAdd, onAddMany, onRemoveSaved, estimate, anal
       <div className="minis" style=${{gridTemplateColumns:'repeat(4,1fr)'}}>
         ${(() => { const t = totals(sel); return [['kcal', t.kcal], ['Protein g', Math.round(t.p)], ['Carbs g', Math.round(t.c)], ['Fat g', Math.round(t.f)]].map(([l, v]) => html`<div key=${l}><span className="num">${fmtNum(v)}</span><small>${l}</small></div>`); })()}
       </div>
-      <button className="btn primary block" style=${{marginTop:12}} onClick=${() => { add(sel, qty); setSel(null); setQ(''); }}><${Icon} name="check"/> Add to today</button>
+      <button className="btn primary block" style=${{marginTop:12}} onClick=${() => { add(sel, qty); setSel(null); setQ(''); }}><${Icon} name="check"/> ${pastDay ? 'Add to this day' : 'Add to today'}</button>
     </div>`}
 
     ${q.trim() ? html`<div>
@@ -4707,6 +4711,8 @@ function WeekBars({ data, labels, target }){
 }
 
 function FoodSection({ caff, nut, targets, todayT, food, units, onAdd, onDelete, onSetup, onRecalc, onLogBw, onCopyMeal, onNut, water, onWater, waterGoal, fasting, onFastStart, onFastEnd, onFastProtocol }){
+  // The day shown: today, or one of the last two weeks to fill in a day you missed
+  const [day, setDay] = useState(localDate());
   const lastMealAt = Object.keys(food).sort().reverse().map(d => (food[d] || []).filter(e => e.at)).find(a => a.length)?.reduce((a, e) => Math.max(a, e.at), 0) || null;
   // Water, caffeine and fasting work without nutrition targets (the Today tiles open this screen)
   const trackers = html`<${WaterCard} oz=${water} goal=${waterGoal} units=${units} onAdd=${onWater}/>
@@ -4718,8 +4724,11 @@ function FoodSection({ caff, nut, targets, todayT, food, units, onAdd, onDelete,
     <p className="muted" style=${{margin:'6px 0 16px'}}>Get calorie and protein targets that adjust each week from your weigh-ins and what you eat.</p>
     <button className="btn primary" onClick=${onSetup}><${Icon} name="food"/> Set up nutrition</button>
   </div>${trackers}</div>`;
-  const today = localDate(), entries = food[today] || [], t = sumFood(entries), T = todayT || targets;
-  const yest = food[addDays(today, -1)] || [], split = MEAL_SPLITS[nut.mealSplit || 'off'];
+  const today = localDate(), isToday = day >= today, shown = isToday ? today : day, earliest = addDays(today, -13);
+  const entries = food[shown] || [], t = sumFood(entries), T = isToday ? (todayT || targets) : targets;
+  const yest = food[addDays(shown, -1)] || [], split = MEAL_SPLITS[nut.mealSplit || 'off'];
+  const dayName = isToday ? 'Today' : shown === addDays(today, -1) ? 'Yesterday' : new Date(shown + 'T12:00:00').toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' });
+  const forDay = isToday ? undefined : shown;   // where Add food and Copy put things
   const days = Array.from({ length:7 }, (_, i) => addDays(weekKey(), i));
   const kc = days.map(d => Math.round(sumFood(food[d]).kcal));
   const past = days.filter((d, i) => d < today && kc[i] > 0);
@@ -4730,8 +4739,14 @@ function FoodSection({ caff, nut, targets, todayT, food, units, onAdd, onDelete,
     : targets.src === 'blend' ? `Partly from your data (${targets.days} days logged). It gets more precise as you log.`
     : 'An estimate for now. After 10 days of food logs it’s calculated from your own data.';
   return html`<div>
-    <section className="panel" style=${{marginTop:14}}>
-      <div className="section-head" style=${{margin:'0 0 2px'}}><h2>Today</h2><span>${T ? `${fmtNum(Math.max(0, T.kcal - Math.round(t.kcal)))} kcal left` : `${fmtNum(Math.round(t.kcal))} kcal, ${Math.round(t.p)} g protein`}</span></div>
+    <div style=${{display:'flex',alignItems:'center',gap:8,marginTop:14}}>
+      <button className="x" style=${{width:36,height:36}} aria-label="Previous day" disabled=${shown <= earliest} onClick=${() => setDay(addDays(shown, -1))}><${Icon} name="chevleft"/></button>
+      <b style=${{flex:1,textAlign:'center'}}>${dayName}</b>
+      <button className="x" style=${{width:36,height:36}} aria-label="Next day" disabled=${isToday} onClick=${() => setDay(addDays(shown, 1))}><${Icon} name="chev"/></button>
+    </div>
+    ${!isToday && html`<p className="note" style=${{textAlign:'center',margin:'4px 0 0'}}>Filling in an earlier day. <button className="link" onClick=${() => setDay(today)}>Back to today</button></p>`}
+    <section className="panel" style=${{marginTop:10}}>
+      <div className="section-head" style=${{margin:'0 0 2px'}}><h2>${dayName}</h2><span>${T ? (isToday ? `${fmtNum(Math.max(0, T.kcal - Math.round(t.kcal)))} kcal left` : `${fmtNum(Math.round(t.kcal))} of ${fmtNum(T.kcal)} kcal`) : `${fmtNum(Math.round(t.kcal))} kcal, ${Math.round(t.p)} g protein`}</span></div>
       ${T ? html`<${MacroBar} label="Calories" val=${t.kcal} target=${T.kcal} unit=" kcal"/>
       <${MacroBar} label="Protein" val=${t.p} target=${T.protein} unit=" g"/>
       <${MacroBar} label="Carbs" val=${t.c} target=${T.carbs} unit=" g"/>
@@ -4739,7 +4754,7 @@ function FoodSection({ caff, nut, targets, todayT, food, units, onAdd, onDelete,
       : html`<p className="note">Your calorie and protein targets are calculated from your trend weight. Log your body weight to see them.</p>
       <button className="btn secondary block" onClick=${onLogBw}><${Icon} name="scale"/> Log body weight</button>`}
       ${T && T.cycled ? html`<p className="note" style=${{marginBottom:0}}>${T.cycled > 0 ? `Lifting day: ${fmtNum(T.cycled)} more calories than your weekly average, mostly carbs.` : `Rest day: ${fmtNum(-T.cycled)} fewer calories than your weekly average.`}</p>` : ''}
-      <button className="btn primary block" style=${{marginTop:8}} onClick=${() => onAdd()}><${Icon} name="food"/> Add food</button>
+      <button className="btn primary block" style=${{marginTop:8}} onClick=${() => onAdd(undefined, forDay)}><${Icon} name="food"/> Add food</button>
     </section>
     <div className="section">
       <div className="section-head"><h2>Meals</h2><span>${entries.length} ${entries.length === 1 ? 'item' : 'items'} logged</span></div>
@@ -4749,21 +4764,21 @@ function FoodSection({ caff, nut, targets, todayT, food, units, onAdd, onDelete,
         return html`<div className="panel meal" key=${k}>
           <div className="meal-h"><b>${label}</b>
             <span className="num">${fmtNum(Math.round(sub.kcal))}${goal ? html`<span className="muted"> / ${fmtNum(goal)}</span>` : ''} kcal</span>
-            <button className="plus" aria-label=${`Add to ${label.toLowerCase()}`} onClick=${() => onAdd(k)}><${Icon} name="plus"/></button></div>
+            <button className="plus" aria-label=${`Add to ${label.toLowerCase()}`} onClick=${() => onAdd(k, forDay)}><${Icon} name="plus"/></button></div>
           ${goal ? html`<div className="mbar" style=${{margin:'6px 0 2px'}}><i style=${{width:`${Math.min(100, sub.kcal / goal * 100)}%`,background: sub.kcal > goal * 1.1 ? 'var(--p-yellow)' : 'var(--accent)'}}></i></div>` : ''}
           ${items.map(e => html`<div className="row" key=${e.id} style=${{padding:'10px 0'}}>
             <span className="row-main"><span className="row-title" style=${{display:'block'}}>${e.label}</span>
               <span className="row-sub">${e.at ? `${clock(e.at)}, ` : ''}${e.qty && e.qty !== 1 ? `${e.qty} × ` : ''}${e.serving ? `${e.serving}, ` : ''}${Math.round(e.p)} g protein</span></span>
             <span className="num" style=${{fontSize:17}}>${fmtNum(Math.round(e.kcal))}</span>
-            <button className="x" style=${{width:30,height:30}} aria-label=${`Delete ${e.label}`} onClick=${() => onDelete(today, e.id)}><${Icon} name="close"/></button>
+            <button className="x" style=${{width:30,height:30}} aria-label=${`Delete ${e.label}`} onClick=${() => onDelete(shown, e.id)}><${Icon} name="close"/></button>
           </div>`)}
-          ${!items.length && prev.length > 0 && html`<button className="link" style=${{marginTop:8}} onClick=${() => onCopyMeal(k, prev)}>Copy yesterday’s ${label.toLowerCase()} (${fmtNum(Math.round(sumFood(prev).kcal))} kcal)</button>`}
+          ${!items.length && prev.length > 0 && html`<button className="link" style=${{marginTop:8}} onClick=${() => onCopyMeal(k, prev, forDay)}>${isToday ? `Copy yesterday’s ${label.toLowerCase()}` : `Copy ${label.toLowerCase()} from the day before`} (${fmtNum(Math.round(sumFood(prev).kcal))} kcal)</button>`}
         </div>`;
       })}
       <div style=${{padding:'6px 4px 0'}}><p className="opt-label" style=${{margin:'0 0 8px'}}>Meal goals</p>
         <div className="wrap">${Object.entries(MEAL_SPLITS).map(([k, m]) => html`<button key=${k} className="pick" aria-pressed=${(nut.mealSplit || 'off') === k} onClick=${() => onNut({ mealSplit:k })}>${m.label}</button>`)}</div></div>
     </div>
-    ${trackers}
+    ${isToday && trackers}
     ${targets && html`<div className="section">
       <div className="section-head"><h2>This week</h2><span>${avgK ? `Averaging ${fmtNum(avgK)} kcal, ${avgP} g protein` : 'Log a few days to see averages'}</span></div>
       <div className="panel"><${WeekBars} data=${kc} labels=${WEEKDAYS.map(d => d.charAt(0))} target=${targets.kcal}/></div>
@@ -5636,9 +5651,8 @@ const UNIT_M = { m:1, km:1000, miles:1609.34 };
 // The "moved" tile: weight moved, or for runs and rows with nothing lifted, the distance
 function movedTile(log, units){ return log.distM && !(log.vol > 0) ? [fmtDist(log.distM), 'Distance'] : [fmtK(toUnit(log.vol || 0, units)), `${units} moved`]; }
 function fmtDist(m){ return m >= 1000 ? `${+(m / 1000).toFixed(m >= 10000 ? 1 : 2)} km` : `${Math.round(m)} m`; }
-function finalizeWorkout(ws, hist){
-  const ex = ws.ex.map(e => ({ key:e.key, id:e.id, n:e.n, m:e.m, trir:e.trir, test:e.test, ...(e.each ? { each:true } : {}),
-    sets:e.sets.filter(x => x.done).map(x => ({ type:x.type, w:x.wl, r:+x.r, rir:x.rir, ...(x.band ? { band:x.band } : {}), ...(x.video ? { video:x.video } : {}) })) })).filter(e => e.sets.length);
+// Sets, volume, distance and PRs of a finished workout's exercises (hist: the workouts before it)
+function logTotals(ex, hist){
   // Working sets leave out warm-ups and technique mini-sets (rest-pause, myo-reps, drops); volume counts both
   // dumbbells on "each" lifts; runs, rows and carries count as distance, not weight moved
   let vol = 0, sets = 0, distM = 0;
@@ -5654,9 +5668,24 @@ function finalizeWorkout(ws, hist){
     const b = bestE1rm(e.sets, e.trir), h = hist[e.key];
     if(b > 0 && h && h.best > 0 && b > h.best + .5) prs.push({ n:e.n, key:e.key, e1rm:Math.round(b), prev:Math.round(h.best) });
   });
+  return { vol:Math.round(vol), sets, distM:Math.round(distM), prs };
+}
+// A saved workout after it's edited in History: empty sets dropped, totals and PRs worked out again
+// (PRs against the workouts before this one, as when it was saved)
+function retotalLog(log, ex, histBefore){
+  const kept = ex.map(e => ({ ...e, sets:e.sets.filter(x => x.r > 0) })).filter(e => e.sets.length);
+  const { vol, sets, distM, prs } = logTotals(kept, histBefore);
+  const out = { ...log, ex:kept, vol, sets, prs, edited:Date.now() };
+  if(distM) out.distM = distM; else delete out.distM;
+  return out;
+}
+function finalizeWorkout(ws, hist){
+  const ex = ws.ex.map(e => ({ key:e.key, id:e.id, n:e.n, m:e.m, trir:e.trir, test:e.test, ...(e.each ? { each:true } : {}),
+    sets:e.sets.filter(x => x.done).map(x => ({ type:x.type, w:x.wl, r:+x.r, rir:x.rir, ...(x.band ? { band:x.band } : {}), ...(x.video ? { video:x.video } : {}) })) })).filter(e => e.sets.length);
+  const { vol, sets, distM, prs } = logTotals(ex, hist);
   const rt = r => r && r.min ? { min:r.min, done:r.items.filter(x => x.done).length, of:r.items.length } : null;
-  return { id:ws.id, kind:'lift', date:ws.date, start:ws.start, end:Date.now(), dayId:ws.dayId, name:ws.name, readiness:ws.readiness, ex, vol:Math.round(vol), sets, prs,
-    ...(distM ? { distM:Math.round(distM) } : {}), ...(ws.wod ? { wod:wodScore(ws, ex, sets), extra:true } : {}),   // a free workout doesn't use up the day's session
+  return { id:ws.id, kind:'lift', date:ws.date, start:ws.start, end:Date.now(), dayId:ws.dayId, name:ws.name, readiness:ws.readiness, ex, vol, sets, prs,
+    ...(distM ? { distM } : {}), ...(ws.wod ? { wod:wodScore(ws, ex, sets), extra:true } : {}),   // a free workout doesn't use up the day's session
     warm:rt(ws.warm), cool:rt(ws.cool), ...(ws.where ? { where:ws.where } : {}) };
 }
 /* A free workout's result from the logger. For time: the clock, and "partial" (never Rx, never a best) when sets
@@ -6203,6 +6232,25 @@ function swapInWorkout(ws, ei, opt, scope, hist){
   else st.ex[ei] = ne;
   return { st, old };
 }
+// "Add exercise" in the logger (web and iPhone): a pick from ExercisePicker (builderEx) joins the end of this workout
+// only, set up the way a program would set it up: sets and reps from the builder defaults, the weight from your
+// history first, then your maxes. The program itself doesn't change.
+function addToWorkout(ws, pick, hist, settings){
+  const st = resumeInto(clone(ws));
+  const pe = builderProgram({ weeks:1, days:[{ name:ws.name || 'Workout', ex:[pick] }] }, settings).weeks[0].days[0].ex[0];
+  const lib = pick.id ? LIB_BY_ID[pick.id] : null;
+  pe.bar = lib ? !!lib.bar && !lib.bw : isBarbell(pe.n);      // the builder only marks a barbell when your maxes give a weight
+  const h = hist[exKey(pe)];
+  if(h){
+    if(!(lib && lib.bw) && h.recent.e1rm > 0) pe.w = roundFor(pe, h.recent.e1rm / (1 + (topReps(pe) + pe.rir) / 30));
+    pe.last = h.recent.sets.map(x => [x.w, x.r, x.band || null]);
+  }
+  const ne = startWorkoutState({ id:ws.dayId, name:ws.name, ex:[pe] }, ws.readiness, { equipment:ws.equipment }).ex[0];
+  ne.oi = null;                                    // not in the program, so "Rest of program" swaps don't apply to it
+  ne.hint = 'Added to this workout.';
+  st.ex.push(ne);
+  return st;
+}
 
 // The set you're on: the first one not yet checked off
 function currentSet(ws){
@@ -6231,7 +6279,7 @@ function upcomingCues(ws, units){
   });
   return out;
 }
-function Logger({ ws, save, units, hist, msFor, onFinish, onDiscard, onMinimize, onPrefs, swapOptionsFor, onSwapProgram, onAddMine }){
+function Logger({ ws, save, units, hist, msFor, onFinish, onDiscard, onMinimize, onPrefs, swapOptionsFor, onSwapProgram, onAddMine, pickerSettings, onAddExercise }){
   const [now, setNow] = useState(Date.now());
   const [rirAt, setRirAt] = useState(null);
   const [sheet, setSheet] = useState(null);
@@ -6573,6 +6621,7 @@ function Logger({ ws, save, units, hist, msFor, onFinish, onDiscard, onMinimize,
           </div>
         </section>`;
       })}
+      ${onAddExercise && !ws.focus && html`<button className="btn secondary block" style=${{marginTop:4,marginBottom:14}} onClick=${() => setSheet('add')}><${Icon} name="plus"/> Add exercise</button>`}
       ${ws.cool && !ws.focus && html`<${RoutineCard} kind="cool" r=${ws.cool} ws=${ws} now=${tnow}
         onMinutes=${v => routineMinutes('cool', v)} onUpdate=${r => save({ ...ws, cool:r })}/>`}
       <div style=${{textAlign:'center',marginTop:8}}><button className="link" style=${{color:'var(--p-red)'}} onClick=${() => setSheet('discard')}>Discard workout</button></div>
@@ -6641,6 +6690,9 @@ function Logger({ ws, save, units, hist, msFor, onFinish, onDiscard, onMinimize,
       return html`<${SwapSheet} ex=${shown} options=${opts} units=${units} imported=${!lx.id || !LIB_BY_ID[lx.id]} scopeLabels=${['This workout', 'Rest of program']} defaultScope="session"
         onAddMine=${onAddMine} onPick=${(o, scope) => doSwap(sheet.swap, o, scope)} onClose=${() => setSheet(null)}/>`;
     })()}
+    ${sheet === 'add' && html`<${Sheet} title="Add exercise" sub="It’s added to this workout only. Your program stays the same." onClose=${() => setSheet(null)}>
+      <${ExercisePicker} settings=${pickerSettings} onAddMine=${onAddMine} onBack=${() => setSheet(null)} onPick=${p => { setSheet(null); onAddExercise(p); }}/>
+    </${Sheet}>`}
     ${sheet === 'finish' && html`<${FinishSheet} ws=${ws} hist=${hist} units=${units} msFor=${msFor} onDiscard=${onDiscard} onSave=${onFinish} onClose=${() => setSheet(null)}/>`}
     ${sheet === 'discard' && html`<${Sheet} title="Discard this workout?" sub="Nothing from this session will be saved." onClose=${() => setSheet(null)}>
       <${SheetButton} className="btn danger block" onClick=${onDiscard}>Discard workout</${SheetButton}>
@@ -6653,10 +6705,10 @@ function Logger({ ws, save, units, hist, msFor, onFinish, onDiscard, onMinimize,
    In the Caliber iPhone app the logger is a SwiftUI screen (app/ios/App/App/Logger). It edits this same
    workout state and sends every change back here, so saving, sync, history and finishing are unchanged.
    It asks this page for what only the page knows: swap options and swaps, routines and the finish summary. */
-function NativeLogger({ ws, save, units, hist, plates, msFor, onFinish, onDiscard, onMinimize, onPrefs, swapOptionsFor, onSwapProgram, onAddMine }){
+function NativeLogger({ ws, save, units, hist, plates, msFor, onFinish, onDiscard, onMinimize, onPrefs, swapOptionsFor, onSwapProgram, onAddMine, pickerSettings }){
   const N = window.caliberNative.logger;
   const props = useRef(null);
-  props.current = { save, units, hist, msFor, onFinish, onDiscard, onMinimize, onPrefs, swapOptionsFor, onSwapProgram, onAddMine };
+  props.current = { save, units, hist, msFor, onFinish, onDiscard, onMinimize, onPrefs, swapOptionsFor, onSwapProgram, onAddMine, pickerSettings };
   const sent = useRef(null);   // the workout the native screen has now
   useEffect(() => {
     const ops = {
@@ -6690,6 +6742,26 @@ function NativeLogger({ ws, save, units, hist, plates, msFor, onFinish, onDiscar
         const { st, old } = swapInWorkout(sent.current, ei, opt, scope, p.hist);
         p.save(st);
         if(scope === 'program' && p.onSwapProgram) p.onSwapProgram(old, opt);
+        return true;
+      },
+      // Add exercise: the library (your own first) with what fits your equipment marked, and adding one to this workout
+      addOptions(){
+        const p = props.current, eq = equipSet(p.pickerSettings || {});
+        return { muscles:FOCUS_MUSCLES,
+          options:[...MY_EX, ...LIB].map(x => ({ key:x.id, n:x.n, m:x.m, mine:!!x.mine, fits:canDo(x, eq), fig:figShapes({ id:x.id, n:x.n }), clip:clipFor({ id:x.id, n:x.n }) })),
+          own: p.onAddMine ? { muscle:'', muscles:FOCUS_MUSCLES, equipment:MY_EQ.map(([k, l]) => ({ k, l })), canAsk:!!window.caliberRequests, library:LIB.map(x => x.n) } : null };
+      },
+      add({ key }){
+        const p = props.current, lib = LIB_BY_ID[key];
+        if(!lib) return false;
+        p.save(addToWorkout(sent.current, builderEx(lib), p.hist, p.pickerSettings || {}));
+        return true;
+      },
+      addOwn({ n, m, eq, note, ask }){
+        const p = props.current, t = String(n || '').trim().replace(/\s+/g, ' ');
+        if(t.length < 2 || !p.onAddMine) return false;
+        const lib = LIB.find(x => x.n.toLowerCase() === t.toLowerCase()) || p.onAddMine({ n:t.slice(0, 40), m, eq, note:String(note || '').trim().slice(0, 300), ask:!!ask });
+        p.save(addToWorkout(sent.current, builderEx(lib), p.hist, p.pickerSettings || {}));
         return true;
       },
       routineSwap({ kind, i }){
@@ -8979,8 +9051,43 @@ function CardioLogSheet({ planned, units, onSave, onClose, live, onStart }){
   </${Sheet}>`;
 }
 
-function LogSheet({ log, num, ms = [], units, onDelete, onClose, onShare }){
+function LogSheet({ log, num, ms = [], units, onDelete, onClose, onShare, onEdit }){
   const [sure, setSure] = useState(false);
+  // Edit workout: weights and reps as typed (in your units), sets added or removed; Save changes works the totals out again
+  const [edit, setEdit] = useState(null);
+  const startEdit = () => setEdit(log.ex.map(e => ({ ...e, sets:e.sets.map(x => ({ ...x, ws: x.band || x.w == null ? '' : String(toUnit(x.w, units)), rs:String(x.r) })) })));
+  const updE = f => setEdit(cur => { const n = clone(cur); f(n); return n; });
+  const saveEdit = () => onEdit(edit.map(e => ({ ...e, sets:e.sets.map(({ ws, rs, ...x }) => {
+    const r = parseInt(rs, 10) || 0;
+    if(x.band || ws === '' && x.w == null) return { ...x, r };
+    const v = parseFloat(String(ws).replace(',', '.'));
+    return { ...x, w: v > 0 ? Math.round((units === 'kg' ? v / KG : v) * 100) / 100 : 0, r };
+  }) })));
+  if(edit) return html`<${Sheet} title=${`Edit ${log.name}`} sub="Fix a weight or reps, or add and remove sets. Totals and PRs update when you save." onClose=${onClose}>
+    ${edit.map((e, ei) => {
+      let wi = 0;
+      return html`<div className="daycard" key=${ei}>
+        <h4>${e.n}</h4>
+        <div className="list">${e.sets.map((x, si) => { if(isWorkType(x.type)) wi++; return html`<div className="setting" key=${si} style=${{minHeight:48,gap:8}}>
+          <span className="muted" style=${{minWidth:56}}>${x.type === 'N' ? `Set ${wi}` : SET_LABEL[x.type] || x.type}</span>
+          <span style=${{display:'flex',alignItems:'center',gap:6}}>
+            ${x.band ? html`<span className="num" style=${{fontSize:16}}>${bandText(x.band)}</span>`
+              : html`<input className="numin num" type="text" inputMode="decimal" style=${{width:72}} aria-label=${`${e.n} set ${si + 1} weight, ${units}`} value=${x.ws} placeholder="BW"
+                  onChange=${ev => updE(n => { n[ei].sets[si].ws = ev.target.value.replace(/[^0-9.,]/g, ''); })}/>`}
+            <span className="muted">×</span>
+            <input className="numin num" type="text" inputMode="numeric" style=${{width:56}} aria-label=${`${e.n} set ${si + 1} reps`} value=${x.rs}
+              onChange=${ev => updE(n => { n[ei].sets[si].rs = ev.target.value.replace(/[^0-9]/g, ''); })}/>
+            <button className="x" style=${{width:30,height:30}} aria-label=${`Remove ${e.n} set ${si + 1}`} onClick=${() => updE(n => { n[ei].sets.splice(si, 1); })}><${Icon} name="close"/></button>
+          </span>
+        </div>`; })}</div>
+        <button className="link" style=${{marginTop:8}} onClick=${() => updE(n => { const ss = n[ei].sets, l = ss[ss.length - 1] || { type:'N', ws:'', rs:'' };
+          ss.push({ ...l, type: l.type === 'W' ? 'N' : l.type, video:undefined }); })}>+ Add set</button>
+      </div>`;
+    })}
+    <p className="note">A set with no reps is removed when you save. An exercise with no sets left is removed too.</p>
+    <${SheetButton} className="btn primary block" onClick=${saveEdit}><${Icon} name="check"/> Save changes</${SheetButton}>
+    <button className="btn secondary block" style=${{marginTop:10}} onClick=${() => setEdit(null)}>Cancel</button>
+  </${Sheet}>`;
   const mins = Math.max(1, Math.round((log.end - log.start) / 60000));
   const d = new Date(log.date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'long', month:'long', day:'numeric' });
   return html`<${Sheet} title=${log.name} sub=${log.kind === 'lift' ? `${num ? `Workout #${num}, ` : ''}${d}, ${mins} min${log.where ? log.where === 'travel' ? ', while traveling' : `, at ${log.where === 'home' ? 'home' : 'the gym'}` : ''}${log.imported ? `, from ${log.imported}` : ''}` : log.kind === 'cardio' && log.cardio ? `${d}, ${log.cardio.mode.toLowerCase()}${log.extra ? ', extra session' : ''}` : d} onClose=${onClose}>
@@ -9019,6 +9126,7 @@ function LogSheet({ log, num, ms = [], units, onDelete, onClose, onShare }){
       ? html`<${SheetButton} className="btn danger block" style=${{marginTop:8}} onClick=${onDelete}>Delete for good</${SheetButton}>`
       : html`<div>
         ${log.kind === 'lift' && html`<button className="btn primary block" style=${{marginTop:8}} onClick=${onShare}><${Icon} name="share"/> Share workout</button>`}
+        ${log.kind === 'lift' && onEdit && (log.ex || []).length > 0 && html`<button className="btn secondary block" style=${{marginTop:10}} onClick=${startEdit}><${Icon} name="pencil"/> Edit workout</button>`}
         <button className="btn secondary block" style=${{marginTop:10}} onClick=${() => setSure(true)}>${log.kind === 'lift' ? 'Delete workout' : log.kind === 'cardio' ? 'Delete cardio' : 'Delete entry'}</button></div>`}
   </${Sheet}>`;
 }
@@ -11443,9 +11551,12 @@ function App(){
   }, [!!nut, wkKey, bw.length]);
   function saveTargets(t){ const o = t ? { [wkKey]:t } : {}; setNutTargets(o); store.set('nutTargets', o); }
   // Logging a food also saves it (per serving) to My foods, so it's one tap next time
+  // Food goes on today unless an earlier day is open on Progress → Food (that day, at the current time of day)
+  const foodAt = d => { if(d === localDate()) return Date.now(); const n = new Date(), t = new Date(d + 'T12:00:00'); t.setHours(n.getHours(), n.getMinutes(), n.getSeconds(), 0); return t.getTime(); };
+  const onDay = d => d === localDate() ? '' : ` to ${new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' })}`;
   function addFood(entry, opts = {}){
-    const d = localDate();
-    const e = { ...entry, meal:entry.meal || mealNow(), at:Date.now(), id:Date.now().toString(36) + Math.random().toString(36).slice(2, 5) };
+    const d = opts.date || localDate();
+    const e = { ...entry, meal:entry.meal || mealNow(), at:foodAt(d), id:Date.now().toString(36) + Math.random().toString(36).slice(2, 5) };
     saveFood({ ...food, [d]:[...(food[d] || []), e] });
     if(opts.save !== false && opts.base){
       const b = opts.base, k = foodKey(b), now = Date.now();
@@ -11454,17 +11565,17 @@ function App(){
         uses:(i >= 0 ? myFoods[i].uses || 0 : 0) + 1, last:now };
       saveMyFoods(i >= 0 ? myFoods.map((m, j) => j === i ? item : m) : [...myFoods, item].slice(-300));
     }
-    toast(`${e.label}, ${fmtNum(Math.round(e.kcal))} kcal added.`);
+    toast(`${e.label}, ${fmtNum(Math.round(e.kcal))} kcal added${onDay(d)}.`);
   }
   useEffect(() => {
     try{ if(window.claude && window.claude.use) window.claude.use('sample').then(f => setSampler(() => f || null)).catch(() => {}); }catch(e){}
   }, []);
   // Several foods at once, from a meal scan, a description or yesterday's meal
-  function addFoods(items){
-    const d = localDate(), now = Date.now();
+  function addFoods(items, date){
+    const d = date || localDate(), now = foodAt(d);
     const es = items.map((x, i) => ({ ...x, at:now + i, id:(now + i).toString(36) + Math.random().toString(36).slice(2, 5) }));
     saveFood({ ...food, [d]:[...(food[d] || []), ...es] });
-    toast(`${es.length} ${es.length === 1 ? 'item' : 'items'}, ${fmtNum(Math.round(es.reduce((a, e) => a + e.kcal, 0)))} kcal added.`);
+    toast(`${es.length} ${es.length === 1 ? 'item' : 'items'}, ${fmtNum(Math.round(es.reduce((a, e) => a + e.kcal, 0)))} kcal added${onDay(d)}.`);
   }
   // Caffeine, kept by day
   const [caff, setCaff] = useState(() => store.get('caffeine', {}));
@@ -11990,9 +12101,9 @@ Reply with only a JSON object and nothing else: {"label": short food name, "serv
       })()} units=${units} week=${week} logs=${logs} hist=${hist} focus=${settings.focus || []} planned=${Math.max(1, liftCount(schedule))}
       ms=${ms} onMilestones=${() => setSheet({ type:'milestones' })}
       caliberProps=${{ caliber, delta:caliberDelta, refLabel:caliberRefLabel, maxes:settings.maxes, bwLb:bwNow, sex:(settings.profile || {}).sex, onInfo:() => setSheet({ type:'caliber' }), onLogBw:() => setSheet({ type:'bw' }), onBoard:() => setSheet({ type:'board' }) }}
-      foodProps=${{ nut, targets, todayT, food, onAdd:meal => setSheet({ type:'food', meal }), onSetup:() => setSheet({ type:'nutSetup' }),
+      foodProps=${{ nut, targets, todayT, food, onAdd:(meal, date) => setSheet({ type:'food', meal, date }), onSetup:() => setSheet({ type:'nutSetup' }),
         onNut:patch => saveSettings({ ...settings, nut:{ ...settings.nut, ...patch } }),
-        onCopyMeal:(meal, items) => addFoods(items.map(({ id, at, ...x }) => ({ ...x, meal }))),
+        onCopyMeal:(meal, items, date) => addFoods(items.map(({ id, at, ...x }) => ({ ...x, meal })), date),
         water:water[localDate()] || 0, onWater:addWater, waterGoal:(nut && nut.waterGoal) || (units === 'kg' ? 3000 / 29.57 : 100),
         fasting, onFastProtocol:k => saveFasting({ ...fasting, protocol:k }),
         onFastStart:t => { saveFasting({ ...fasting, current:{ start:t } }); toast(`Fast started at ${clock(t)}.`); },
@@ -12023,7 +12134,11 @@ Reply with only a JSON object and nothing else: {"label": short food name, "serv
   if(sheet?.type === 'log'){
     const l = logs.find(x => x.id === sheet.id);
     if(l) var logSheet = html`<${LogSheet} log=${l} num=${ms.number[l.id]} ms=${ms.list.filter(m => m.id === l.id)} units=${units} onClose=${() => setSheet(null)} onShare=${() => setSheet({ type:'share', id:l.id })}
-      onDelete=${() => { saveLogs(logs.filter(x => x.id !== l.id)); toast(l.kind === 'lift' ? 'Workout deleted.' : l.kind === 'cardio' ? 'Cardio deleted.' : 'Entry deleted.'); }}/>`;
+      onDelete=${() => { saveLogs(logs.filter(x => x.id !== l.id)); toast(l.kind === 'lift' ? 'Workout deleted.' : l.kind === 'cardio' ? 'Cardio deleted.' : 'Entry deleted.'); }}
+      onEdit=${ex => { const before = buildHistory(logs.filter(x => x.kind === 'lift' && x.id !== l.id && x.start < l.start));
+        const nl = retotalLog(l, ex, before);
+        if(!nl.ex.length){ saveLogs(logs.filter(x => x.id !== l.id)); toast('Workout deleted: it had no sets left.'); return; }
+        saveLogs(logs.map(x => x.id === l.id ? nl : x)); setSheet({ type:'log', id:l.id }); toast('Workout updated.'); }}/>`;
   }
   let sheetEl = null;
   // A sheet can hand off to another one; it opens once the first has finished sliding away
@@ -12113,8 +12228,8 @@ Reply with only a JSON object and nothing else: {"label": short food name, "serv
   if(sheet?.type === 'caffeine') sheetEl = html`<${CaffeineSheet} nutOn=${!!nut} onClose=${close} onAdd=${(item, kcal) => { addCaffeine(item, kcal); close(); }}
     widget=${sheet.widget ? { pick:settings.widgetCaff || null, recent:sheet.recent } : null}
     onWidget=${item => { saveSettings({ ...settings, widgetCaff:item }); close(); toast(item ? `Widget button set to ${item.label}, ${Math.round(item.mg)} mg.` : 'Widget button repeats your last drink.'); }}/>`;
-  if(sheet?.type === 'food') sheetEl = html`<${AddFoodSheet} myFoods=${myFoods} onAdd=${addFood} onClose=${close} estimate=${sampler || window.caliberAI ? estimateFood : null}
-    analyze=${sampler || window.caliberAI ? analyzeMeal : null} canPhoto=${photoOk} initialMeal=${sheet.meal} onAddMany=${items => { addFoods(items); close(); }}
+  if(sheet?.type === 'food') sheetEl = html`<${AddFoodSheet} myFoods=${myFoods} onAdd=${(e, o) => addFood(e, { ...o, date:sheet.date })} onClose=${close} date=${sheet.date} estimate=${sampler || window.caliberAI ? estimateFood : null}
+    analyze=${sampler || window.caliberAI ? analyzeMeal : null} canPhoto=${photoOk} initialMeal=${sheet.meal} onAddMany=${items => { addFoods(items, sheet.date); close(); }}
       onRemoveSaved=${id => { saveMyFoods(myFoods.filter(m => m.id !== id)); toast('Removed from My foods.'); }}/>`;
   if(sheet?.type === 'nutSetup') sheetEl = html`<${NutritionSetupSheet} nut=${settings.nut} units=${units} preview=${n => computeTargets(n)} onClose=${close}
       onSave=${n => { saveSettings({ ...settings, nut:n }); saveTargets(computeTargets(n)); toast('Nutrition targets saved.'); }}
@@ -12253,6 +12368,7 @@ Reply with only a JSON object and nothing else: {"label": short food name, "serv
       ${onbOpen && html`<${Onboarding} settings=${settings} units=${units} lifts=${liftCount(schedule)} bwLb=${bwNow} firstRun=${onbFirst}
         onFinish=${finishOnboarding} onClose=${() => { store.set('onboarded', true); setOnbOpen(false); }}/>`}
       ${demoWs && html`<${Logger} ws=${demoWs} save=${setDemoWs} units=${units} hist=${hist} swapOptionsFor=${loggerSwap}
+        pickerSettings=${settings} onAddExercise=${pick => setDemoWs(w => addToWorkout(w, pick, hist, settings))}
         onSwapProgram=${() => {}} onPrefs=${() => {}} onFinish=${() => { tourDemo(false); toast('That was a sample. Nothing was saved.'); }}
         onDiscard=${() => tourDemo(false)} onMinimize=${() => tourDemo(false)}/>
         <div style=${{position:'fixed',left:'50%',transform:'translateX(-50%)',bottom:'calc(env(safe-area-inset-bottom,0px) + 96px)',zIndex:35,
@@ -12271,7 +12387,8 @@ Reply with only a JSON object and nothing else: {"label": short food name, "serv
       </div>
 
       ${workout && loggerOpen && html`<${window.caliberNative && window.caliberNative.logger ? NativeLogger : Logger} ws=${workout} save=${saveWorkout} units=${units} hist=${hist} plates=${homeInv} msFor=${msFor}
-        swapOptionsFor=${loggerSwap} onAddMine=${addMine}
+        swapOptionsFor=${loggerSwap} onAddMine=${addMine} pickerSettings=${settings}
+        onAddExercise=${pick => { saveWorkout(addToWorkout(workout, pick, hist, settings)); toast(`${pick.n} added to this workout.`); }}
         onSwapProgram=${(lx, opt) => { const d = sessions.find(x => x.id === workout.dayId); const orig = d && d.ex[lx.oi];
           if(orig) applySwap(orig, { dayId:d.id, idx:lx.oi }, opt, 'program'); }}
         onPrefs=${(k, v) => { if(!workout || !workout.wod) saveSettings({ ...settings, [k === 'warm' ? 'warmMin' : 'coolMin']:v }); }}
