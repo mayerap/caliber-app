@@ -235,6 +235,15 @@ img,svg{max-width:100%}
 .paused{position:sticky;top:calc(env(safe-area-inset-top,0px) + 62px);z-index:2;display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:14px;border-radius:16px;background:color-mix(in srgb,var(--p-yellow) 18%,var(--surface));border:1px solid color-mix(in srgb,var(--p-yellow) 40%,transparent)}
 .lg-card{scroll-margin-top:90px}
 .lg-focusnav{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+/* focus mode: every exercise as a tile across the top; tap one to jump to it */
+.lg-tiles{display:flex;gap:8px;overflow-x:auto;margin:0 -2px 10px;padding:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.lg-tiles::-webkit-scrollbar{display:none}
+.lg-tile{flex:0 0 auto;max-width:150px;text-align:left;padding:8px 12px;border-radius:12px;background:var(--surface);border:1px solid var(--line);color:var(--text)}
+.lg-tile b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lg-tile span{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.lg-tile span i{width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block}
+.lg-tile.on{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--surface))}
+.lg-tile.done span{color:var(--p-green)}
 .lg-focusnav button.nav{width:44px;height:44px;border-radius:12px;background:var(--surface);border:1px solid var(--line);display:grid;place-items:center}
 .lg-focusnav svg{width:18px;height:18px}
 .hd-btn{width:40px;height:40px;border-radius:12px;background:var(--raised);display:grid;place-items:center;flex:none}
@@ -3409,18 +3418,19 @@ const GUIDE = [
   { tab:'today', find:byHeading('Exercises'), opt:1, t:'Exercises', d:'Each exercise with its sets, reps and weight. A trophy means the set you’re scheduled for would be a PR. Tap one for form cues, past performance, or to swap it.' },
   { tab:'today', sel:'.tiles', opt:1, t:'Daily check-ins', d:'Quick readiness, body weight, food and water logging. Readiness tunes today’s loads to how you slept and recovered. Connect Apple Health in the check-in to add sleep, heart rate variability and resting heart rate from Apple Watch, Oura, Whoop or another tracker.' },
   { tab:'today', sel:'.cta', opt:1, t:'Start your workout', d:'This opens the workout logger. Next, a sample workout so you can see how it works. Nothing in it is saved.' },
-  { demo:1, sel:'.logger .lg-head', opt:1, t:'The workout logger', d:'This is a sample; nothing here is saved. Up top: your time and sets done, plus pause, focus mode (one exercise at a time) and Finish.' },
+  { demo:1, sel:'.logger .lg-head', opt:1, t:'The workout logger', d:'This is a sample; nothing here is saved. Up top: your time and sets done, plus pause, focus mode (one exercise at a time, with a tile for each exercise along the top: tap one to jump to it) and Finish.' },
   { demo:1, find:() => [...document.querySelectorAll('.logger .lg-card')].find(c => c.querySelector('[aria-label^="Swap "]')), opt:1, t:'One card per exercise', d:'Target sets, reps, effort and weight. The arrows button swaps the exercise for another; the link button pairs it into a superset. In a superset, once a set is logged and rated, Caliber jumps to the other exercise.' },
   { demo:1, find:() => [...document.querySelectorAll('.logger button')].find(b => b.textContent.trim() === 'Add exercise'), opt:1, t:'Add an exercise', d:'Want one more? Add exercise, below the last card, adds any exercise to this workout only, with a starting weight from your history. Your program stays the same.' },
+  { demo:1, find:() => [...document.querySelectorAll('.logger label.panel')].find(l => /Workout notes/.test(l.textContent)), opt:1, t:'Workout notes', d:'Anything worth remembering, like a crowded gym or a tweaky shoulder. Notes are saved with the workout and show in History, where you can edit them later.' },
   { demo:1, sel:'.logger .lg-pm', opt:1, t:'Plate math', d:'For barbell lifts: exactly what goes on each side of the bar for the set you’re on.' },
   { demo:1, sel:'.logger .lg-row.next', opt:1, t:'Log a set', d:'Weight and reps are already filled in. Tap a number to change it, then tap the check. Tap the set number to change its type: W for warm-up, A for AMRAP (as many reps as you can), D for a drop set, F for to failure.' },
   { demo:1, t:'Rep ranges', d:'A target like 8–10 is a rep range. Keep the same weight until you reach the top of the range on every set; then Caliber adds weight next time. A set below the range holds the weight where it is.' },
   { demo:1, sel:'.logger .lg-row.next', swipe:{ icon:'video', label:'Film' }, opt:1, t:'Film your set', d:'In the iPhone app, swipe a set to the right and tap Film (or swipe all the way across). The camera opens: record the set, then tap Use Video. A small camera marks the set. Swipe it right again and tap Video to watch it, save it to Photos or share it with your set on a Caliber card.' },
   { demo:1, before:async () => { for(let k = 0; k < 8 && !document.querySelector('.logger .lg-rir'); k++){ const c = document.querySelector('.logger .lg-row.next .lg-check'); if(!c) break; c.click(); await new Promise(r => setTimeout(r, 180)); } },
-    sel:'.logger .lg-rir', opt:1, t:'Rate the effort', d:'After a working set, tap how many reps you had left in the tank, or your RPE. Caliber raises or lowers the next set’s weight to match the day you’re having.' },
+    sel:'.logger .lg-rir', opt:1, t:'Rate the effort', d:'After a working set, tap how many reps you had left in the tank, or your RPE. Caliber raises or lowers the next set’s weight to match the day you’re having. It waits for this before moving you on to the next exercise.' },
   { demo:1, sel:'.rest', opt:1, t:'Rest timer', d:'Starts on its own after each set. Add or take away 15 seconds, or skip it. When it ends you’ll hear a beep, a chime or a voice telling you your next set, or no sound (choose in Profile).' },
-  { demo:1, t:'Log from the Lock Screen', d:'In the iPhone app, your workout stays on the Lock Screen and in the Dynamic Island. Change the weight or reps and tap Done to log a set without opening Caliber. Rest counts down there too.' },
-  { demo:1, t:'Warm-up and cool-down', d:'Real workouts start with a guided warm-up and end with a cool-down, picked for the muscles you train. Each move shows step-by-step cues while it runs. Tap Edit to swap a move or remove it. At home, the warm-up uses the cardio machines you have.' },
+  { demo:1, t:'Log from the Lock Screen', d:'In the iPhone app, your workout stays on the Lock Screen and in the Dynamic Island. Change the weight or reps and tap Done to log a set without opening Caliber, then tap how hard it was. Rest counts down there too, and so does a running warm-up or cool-down, with Pause and Next. Apple Watch shows the same.' },
+  { demo:1, t:'Warm-up and cool-down', d:'Real workouts start with a guided warm-up and end with a cool-down, picked for the muscles you train. Each move shows step-by-step cues while it runs. Tap Edit to swap a move or remove it. At home, the warm-up uses the cardio machines you have. Rather stretch your own way? Pick Free for one timer instead; Caliber remembers your choice.' },
   { demo:1, find:() => [...document.querySelectorAll('.logger .lg-head button')].find(b => b.textContent.trim() === 'Finish'), opt:1, t:'Finish', d:'When you’re done, Finish saves the workout, updates your maxes, shows any PRs, and lets you share a story card. This sample is thrown away.' },
   { basics:1, t:'New to lifting?', d:'Warm up before heavy sets (Caliber adds warm-ups for you). Stop a set when your form slips. End most sets with 2 or 3 good reps left. Rest days and sleep are when you actually get stronger.' },
   { tab:'today', sel:'.tabbar', t:'Getting around', d:'Today, your Program, workout History, Progress and your Profile. Next, a look at each.' },
@@ -4284,7 +4294,8 @@ function ExerciseGuide({ ex, compact }){
   const g = guideFor(ex);
   const link = html`<a className="demo" href=${demoUrl(ex.n)} target="_blank" rel="noopener noreferrer"><${Icon} name="ext"/>Watch a demo</a>`;
   if(!g) return html`<div className="guide">${link}</div>`;
-  if(compact) return html`<div className="guide"><ol>${g.cues.map((c, i) => html`<li key=${i}>${c}</li>`)}</ol>${link}</div>`;
+  // in the logger: the setup line first (grip, stance), then the cues
+  if(compact) return html`<div className="guide">${g.setup && html`<p className="muted" style=${{margin:'0 0 6px'}}>${g.setup}</p>`}<ol>${g.cues.map((c, i) => html`<li key=${i}>${c}</li>`)}</ol>${link}</div>`;
   return html`<div className="guide panel" style=${{marginTop:18}}>
     <div className="section-head" style=${{margin:'0 0 4px'}}><h2>How to do it</h2><span>${g.primary}${g.also ? `, ${g.also.toLowerCase()}` : ''}</span></div>
     <p className="muted" style=${{margin:'6px 0 0'}}>${g.setup}</p>
@@ -4941,8 +4952,7 @@ function CaffeineSheet({ nutOn, onAdd, onClose, widget, onWidget }){
         <input className="text" type="text" value=${q} maxLength="40" placeholder="What did you have?" onChange=${e => setQ(e.target.value)}/></label>`}
       ${widget ? html`<div className="list" style=${{marginBottom:12}}>
           <label className="setting"><span>Caffeine per tap (mg)</span><input className="numin num" type="text" inputMode="decimal" value=${mg} onChange=${e => setMg(e.target.value.replace(/[^0-9.]/g, ''))}/></label></div>
-        <${SheetButton} className="btn primary block" disabled=${!mgv} onClick=${() => onWidget({ ...item, mg:mgv })}><${Icon} name="check"/> Use for the widget button</${SheetButton}>
-      </${Sheet}>` : html`
+        <${SheetButton} className="btn primary block" disabled=${!mgv} onClick=${() => onWidget({ ...item, mg:mgv })}><${Icon} name="check"/> Use for the widget button</${SheetButton}>` : html`
       <div className="list" style=${{marginBottom:12}}>
         <label className="setting"><span>Caffeine per serving (mg)</span><input className="numin num" type="text" inputMode="decimal" value=${mg} onChange=${e => setMg(e.target.value.replace(/[^0-9.]/g, ''))}/></label>
         <div className="setting"><span>Servings</span><${Stepper} label="servings" value=${qty} step=${.5} min=${.5} max=${6} onChange=${setQty}/></div>
@@ -4951,8 +4961,8 @@ function CaffeineSheet({ nutOn, onAdd, onClose, widget, onWidget }){
       ${nutOn && kcal > 5 && html`<div className="setting" style=${{padding:'0 4px 12px'}}><span>Add ${kcal} kcal to food log</span>
         <${Seg} label="Add to food log" value=${toFood} onChange=${setToFood} options=${[{ v:true, l:'Yes' }, { v:false, l:'No' }]}/></div>`}
       <${SheetButton} className="btn primary block" disabled=${!mgv} onClick=${() => onAdd({ ...item, mg:mgv * qty, qty, at:at() }, nutOn && kcal > 5 && toFood ? kcal : 0)}>
-        <${Icon} name="check"/> Log ${Math.round(mgv * qty)} mg</${SheetButton}>
-    </${Sheet}>`}`;
+        <${Icon} name="check"/> Log ${Math.round(mgv * qty)} mg</${SheetButton}>`}
+    </${Sheet}>`;
   }
   const row = (x, sub, key) => html`<button key=${key} className="row" style=${{width:'100%'}} aria-pressed=${widget ? isPick(x) : undefined} onClick=${() => pick(x)}>
     <span className="row-main"><span className="row-title" style=${{display:'block'}}>${x.label}</span><span className="row-sub">${sub}</span></span>
@@ -5622,9 +5632,13 @@ function startWorkoutState(day, score, prefs = {}){
   const warm = prefs.warm == null ? 10 : prefs.warm, cool = prefs.cool == null ? 5 : prefs.cool;
   return { id:Date.now().toString(36), dayId:day.id, name:day.name, date:localDate(), start:Date.now(), readiness:score, adj, rest:null, ...(day.wod ? { wod:day.wod } : {}),
     summary, equipment:prefs.equipment || 'full', where:prefs.where || null, ...(prefs.cardio ? { cardio:prefs.cardio } : {}), ...(prefs.noBands ? { noBands:true } : {}),
-    warm:{ min:warm, items:routineFor('warm', summary, warm, prefs.equipment, prefs.cardio, prefs.noBands), run:null, paused:null },
-    cool:{ min:cool, items:routineFor('cool', summary, cool, prefs.equipment, prefs.cardio, prefs.noBands), run:null, paused:null },
+    // guided, or free if that's what you picked last time
+    warm:routineStyle({ min:warm, items:routineFor('warm', summary, warm, prefs.equipment, prefs.cardio, prefs.noBands), run:null, paused:null }, 'warm', !!prefs.warmFree && warm > 0),
+    cool:routineStyle({ min:cool, items:routineFor('cool', summary, cool, prefs.equipment, prefs.cardio, prefs.noBands), run:null, paused:null }, 'cool', !!prefs.coolFree && cool > 0),
     ex:day.ex.map((e, oi) => {
+      // programs built earlier keep the library's current flags (cable fly is per arm, barbell row is a barbell lift)
+      const lib = e.id && LIB_BY_ID[e.id];
+      if(lib && !lib.mine && ((lib.each && !e.each) || (lib.bar && !e.bar && e.w > 0))) e = { ...e, each: e.each || lib.each, bar: e.bar || (lib.bar && e.w > 0) };
       let w = e.w, rir = e.test ? 0 : e.rir, sets = e.sets;
       // readiness: 5% off (at least one plate or dumbbell step, so 20 lb doesn't round back to 20), and one fewer set on
       // accessories; plans without exercise roles count everything after the first two as accessories
@@ -5639,10 +5653,13 @@ function startWorkoutState(day, score, prefs = {}){
       groups.forEach(g => { for(let i = 0; i < g.sets; i++) rows.push({ type: g.amrap && i === g.sets - 1 ? 'A' : 'N', tw: e.test ? null : (w == null ? null : (g === groups[0] || e.added || e.noEffort || !(w > 0) ? w : roundLoad(w * (1 + (topReps(e) - g.hi) / 30)))), tr:g.hi,
         ...(g.lo > 0 && g.lo < g.hi && !(g.amrap && i === g.sets - 1) ? { tlo:g.lo } : {}), w:'', r:'', rir:null, done:false }); });
       if(e.attempts){ let k = 0; rows.forEach(x => { if(x.type !== 'W' && e.attempts[k] != null) x.tw = e.attempts[k++]; }); }
+      // pull-ups and dips done with a band last time start with the same band on every set
+      const lastBand = isAssistable(e.n) && e.last && e.last.length ? e.last[0][2] : null;
+      if(lastBand && BANDS[lastBand]) rows.forEach(x => { if(x.type !== 'W'){ x.band = lastBand; x.tw = 0; x.w = '0'; } });
       return { key:e.key || exKey(e), id:e.id, n:e.n, m:e.m, pattern:e.pattern, tech:e.test ? null : e.tech, bar:e.bar, each:e.each, added:e.added, rest: e.noRest ? 0 : restSeconds(e), trir:rir, test:e.test,
         ...(e.noEffort ? { noEffort:true } : {}), ...(exUnit(e.n) ? { dist:true, unit:exUnit(e.n) } : {}), ...(e.attempts ? { fixed:true } : {}),
         target: e.test ? TEST_METHODS[e.test].todo : e.targetText || (rir == null ? setsReps({ ...e, sets }) : `${setsReps({ ...e, sets })} at ${eff(rir)}`), notes:e.notes, superset:e.superset, prev:e.last || [], sets:rows,
-        oi, ss:ssLetter(e.superset), pr:!!(e.prChance && !(adj && adj.load)), hint:e.adaptNote || null, assist:isAssistable(e.n), subs:e.subs || [], hi:topReps(e), role:e.role, src:{ sets, reps:e.reps, repsLabel:e.repsLabel, groups:e.groups } };
+        oi, ss:ssLetter(e.superset), pr:!!(e.prChance && !(adj && adj.load)), hint:e.adaptNote || (lastBand && BANDS[lastBand] ? `Same ${BANDS[lastBand].label.toLowerCase()} band as last time. Tap the band on a set to change it.` : null), assist:isAssistable(e.n), subs:e.subs || [], hi:topReps(e), role:e.role, src:{ sets, reps:e.reps, repsLabel:e.repsLabel, groups:e.groups } };
     }) };
 }
 // The unit a movement is counted in when it isn't reps: "Run (m)", "Row (km)", "Easy run (min)", "Bike (cal)"
@@ -5672,10 +5689,11 @@ function logTotals(ex, hist){
 }
 // A saved workout after it's edited in History: empty sets dropped, totals and PRs worked out again
 // (PRs against the workouts before this one, as when it was saved)
-function retotalLog(log, ex, histBefore){
+function retotalLog(log, ex, histBefore, notes){
   const kept = ex.map(e => ({ ...e, sets:e.sets.filter(x => x.r > 0) })).filter(e => e.sets.length);
   const { vol, sets, distM, prs } = logTotals(kept, histBefore);
   const out = { ...log, ex:kept, vol, sets, prs, edited:Date.now() };
+  if(notes != null){ const n = String(notes).trim().slice(0, 1000); if(n) out.notes = n; else delete out.notes; }
   if(distM) out.distM = distM; else delete out.distM;
   return out;
 }
@@ -5686,7 +5704,7 @@ function finalizeWorkout(ws, hist){
   const rt = r => r && r.min ? { min:r.min, done:r.items.filter(x => x.done).length, of:r.items.length } : null;
   return { id:ws.id, kind:'lift', date:ws.date, start:ws.start, end:Date.now(), dayId:ws.dayId, name:ws.name, readiness:ws.readiness, ex, vol, sets, prs,
     ...(distM ? { distM } : {}), ...(ws.wod ? { wod:wodScore(ws, ex, sets), extra:true } : {}),   // a free workout doesn't use up the day's session
-    warm:rt(ws.warm), cool:rt(ws.cool), ...(ws.where ? { where:ws.where } : {}) };
+    warm:rt(ws.warm), cool:rt(ws.cool), ...(ws.where ? { where:ws.where } : {}), ...(String(ws.notes || '').trim() ? { notes:String(ws.notes).trim().slice(0, 1000) } : {}) };
 }
 /* A free workout's result from the logger. For time: the clock, and "partial" (never Rx, never a best) when sets
    were left unlogged. AMRAP: whole rounds done by every movement, plus the reps into the next round. A max total:
@@ -6082,6 +6100,20 @@ function routineKeep(items, old){
   const removed = new Set(old.removed || []), swapped = old.swapped || {};
   return items.filter(x => !removed.has(x.n)).map(x => swapped[x.n] ? { ...swapped[x.n], secs:x.secs, done:false } : x);
 }
+// Guided (a list of timed movements) or free (one timer for the whole length, moving your own way).
+// Free keeps the guided list aside so switching back brings it back.
+function routineFreeItem(kind, min){
+  return kind === 'warm'
+    ? { n:'Free warm-up', secs:min * 60, dose:`${min} min. Move and loosen up your own way`, pool:'free' }
+    : { n:'Free stretch', secs:min * 60, dose:`${min} min. Stretch whatever feels tight`, pool:'free' };
+}
+function routineStyle(r, kind, free){
+  if(!r || !!r.free === free) return r;
+  const c = { ...r, run:null, paused:null };
+  if(free){ c.free = true; c.guided = r.items; c.items = [routineFreeItem(kind, r.min)]; }
+  else { delete c.free; c.items = (r.guided || r.items).map(x => ({ ...x, done:false })); delete c.guided; }
+  return c;
+}
 // Take a movement out. If it was running, the next one not done starts.
 function routineRemove(r, i, now){
   const c = clone(r);
@@ -6097,7 +6129,7 @@ function routineRemove(r, i, now){
 }
 function initAudio(){ try{ const C = window.AudioContext || window.webkitAudioContext; if(C){ window.__ac = window.__ac || new C(); if(window.__ac.resume) window.__ac.resume(); } }catch(e){} }
 
-function RoutineCard({ kind, r, ws, now, firstLift, onMinutes, onUpdate }){
+function RoutineCard({ kind, r, ws, now, firstLift, onMinutes, onUpdate, onStyle }){
   const [editing, setEditing] = useState(false);
   const title = kind === 'warm' ? 'Warm-up' : 'Cool-down';
   const total = r.items.reduce((a, x) => a + x.secs, 0), doneN = r.items.filter(x => x.done).length;
@@ -6118,11 +6150,15 @@ function RoutineCard({ kind, r, ws, now, firstLift, onMinutes, onUpdate }){
     <div style=${{display:'flex',justifyContent:'space-between',alignItems:'baseline',gap:10}}>
       <div style=${{fontWeight:700,fontSize:17}}>${title}</div>
       <span className="muted small">${r.min ? `${Math.round(total / 60)} min, ${doneN} of ${r.items.length} done` : 'Off'}
-        ${r.min > 0 && r.items.length > 0 && html`<button className="link" style=${{marginLeft:10}} aria-pressed=${editing} onClick=${() => setEditing(!editing)}>${editing ? 'Done' : 'Edit'}</button>`}</span>
+        ${r.min > 0 && r.items.length > 0 && !r.free && html`<button className="link" style=${{marginLeft:10}} aria-pressed=${editing} onClick=${() => setEditing(!editing)}>${editing ? 'Done' : 'Edit'}</button>`}</span>
     </div>
     <div style=${{marginTop:10}}>
       <${Seg} wide label=${`${title} length`} value=${r.min} onChange=${onMinutes} options=${[{ v:0, l:'Off' }, { v:5, l:'5 min' }, { v:10, l:'10 min' }, { v:15, l:'15 min' }]}/>
     </div>
+    ${r.min > 0 && html`<div style=${{marginTop:8}}>
+      <${Seg} wide label=${`${title} style`} value=${r.free ? 'free' : 'guided'} onChange=${v => { onUpdate(routineStyle(r, kind, v === 'free')); if(onStyle) onStyle(v === 'free'); }}
+        options=${[{ v:'guided', l:'Guided' }, { v:'free', l:'Free' }]}/>
+    </div>`}
     ${r.min > 0 && html`<div>
       ${run && cur && html`<div className="rt-now" aria-live="polite">
         <div className="muted small">${cur.sides ? (left > cur.secs * 500 ? 'First side' : 'Switch sides') : 'Now'}</div>
@@ -6157,7 +6193,7 @@ function RoutineCard({ kind, r, ws, now, firstLift, onMinutes, onUpdate }){
         </div>`)}
       </div>
       ${!run && doneN < r.items.length && html`<button className="btn primary block" style=${{marginTop:10,height:44}} onClick=${start}>
-        <${Icon} name="play"/> ${r.paused ? 'Resume' : `Start guided ${title.toLowerCase()}`}</button>`}
+        <${Icon} name="play"/> ${r.paused ? 'Resume' : r.free ? `Start ${r.min}-minute timer` : `Start guided ${title.toLowerCase()}`}</button>`}
       ${kind === 'warm' && firstLift && html`<p className="note" style=${{marginBottom:0}}>Then do the warm-up sets for ${firstLift} below.</p>`}
     </div>`}
   </section>`;
@@ -6390,6 +6426,7 @@ function Logger({ ws, save, units, hist, msFor, onFinish, onDiscard, onMinimize,
   function routineMinutes(k, v){
     const st = clone(ws);
     st[k] = { min:v, items:routineKeep(routineFor(k, ws.summary || [], v, ws.equipment, ws.cardio, ws.noBands), ws[k]), run:null, paused:null, removed:(ws[k] || {}).removed, swapped:(ws[k] || {}).swapped };
+    if(v > 0 && ws[k] && ws[k].free) st[k] = routineStyle(st[k], k, true);   // a new length keeps the free timer
     save(st);
     if(onPrefs) onPrefs(k, v);
   }
@@ -6409,14 +6446,16 @@ function Logger({ ws, save, units, hist, msFor, onFinish, onDiscard, onMinimize,
       // the next set is the superset partner's: go to it once weight, reps and effort are in
       if(rirAt) jumpAfterRir.current = true; else jumpSoon();
     } else if(lastEi.current !== curEi && curEi >= 0 && !ws.focus){
-      jumpAfterRir.current = false;
-      const el = document.getElementById(`ex-${curEi}`);
-      if(el) setTimeout(() => el.scrollIntoView({ behavior:'smooth', block:'start' }), 250);
+      // the next exercise: go to it once the effort for the last set is in, not before
+      const toNext = () => { const el = document.getElementById(`ex-${curEi}`); if(el) setTimeout(() => el.scrollIntoView({ behavior:'smooth', block:'start' }), 250); };
+      if(rirAt) jumpAfterRir.current = toNext; else { jumpAfterRir.current = false; toNext(); }
     }
     lastEi.current = curEi;
   }, [curEi]);
-  useEffect(() => { if(!rirAt && jumpAfterRir.current){ jumpAfterRir.current = false; jumpSoon(); } }, [rirAt]);
-  const fi = ws.focus ? (ws.focusIdx != null ? ws.focusIdx : Math.max(0, curEi)) : null;
+  useEffect(() => { if(!rirAt && jumpAfterRir.current){ const j = jumpAfterRir.current; jumpAfterRir.current = false; typeof j === 'function' ? j() : jumpSoon(); } }, [rirAt]);
+  // focus mode stays on the exercise whose effort is still to rate
+  const rirEi = rirAt ? +String(rirAt).split(':')[0] : null;
+  const fi = ws.focus ? (ws.focusIdx != null ? ws.focusIdx : rirEi != null && ws.ex[rirEi] ? rirEi : Math.max(0, curEi)) : null;
   const du = v => toUnit(v, units);
   const ph = tw => tw == null ? '' : tw === 0 ? 'BW' : String(du(tw));
   function upd(fn){ const st = clone(ws); fn(st); save(st); }
@@ -6517,6 +6556,11 @@ function Logger({ ws, save, units, hist, msFor, onFinish, onDiscard, onMinimize,
       </div>`}
       ${ws.adj && html`<div className="issue warn" style=${{marginBottom:14}}>Readiness ${ws.readiness}: ${ws.adj.text}.</div>`}
       ${ws.ssNext && cur && ws.ex[cur.ei] && ws.ex[cur.ei].ss && html`<div className="ss-now" role="status"><${Icon} name="link"/>${ws.ssNext}</div>`}
+      ${ws.focus && html`<div className="lg-tiles" role="list" aria-label="Exercises in this workout">${ws.ex.map((e, i) => {
+        const w = e.sets.filter(x => x.type !== 'W'), d = w.filter(x => x.done).length;
+        return html`<button key=${i} role="listitem" className=${'lg-tile' + (i === fi ? ' on' : '') + (w.length && d === w.length ? ' done' : '')} aria-current=${i === fi ? 'true' : undefined}
+          onClick=${() => save({ ...ws, focusIdx: i === curEi ? null : i })}>
+          <b>${e.n}</b><span>${w.length && d === w.length ? 'Done' : `${d} of ${w.length}`}${i === curEi ? html` <i aria-label="current"></i>` : ''}</span></button>`; })}</div>`}
       ${ws.focus && html`<div className="lg-focusnav">
         <button className="nav" aria-label="Previous exercise" disabled=${fi <= 0} onClick=${() => save({ ...ws, focusIdx:Math.max(0, fi - 1) })}><${Icon} name="chevleft"/></button>
         <div style=${{textAlign:'center'}}>
@@ -6527,7 +6571,7 @@ function Logger({ ws, save, units, hist, msFor, onFinish, onDiscard, onMinimize,
         <button className="nav" aria-label="Next exercise" disabled=${fi >= ws.ex.length - 1} onClick=${() => save({ ...ws, focusIdx:Math.min(ws.ex.length - 1, fi + 1) })}><${Icon} name="chev"/></button>
       </div>`}
       ${ws.warm && !ws.focus && html`<${RoutineCard} kind="warm" r=${ws.warm} ws=${ws} now=${tnow} firstLift=${firstLift}
-        onMinutes=${v => routineMinutes('warm', v)} onUpdate=${r => save({ ...ws, warm:r })}/>`}
+        onMinutes=${v => routineMinutes('warm', v)} onUpdate=${r => save({ ...ws, warm:r })} onStyle=${f => onPrefs && onPrefs('warmFree', f)}/>`}
       ${ws.ex.map((ex, ei) => {
         if(ws.focus && ei !== fi && !(ws.ex[fi] && ws.ex[fi].ss && ex.ss === ws.ex[fi].ss)) return null;
         const firstW = ex.sets.find(x => x.type !== 'W');
@@ -6622,8 +6666,11 @@ function Logger({ ws, save, units, hist, msFor, onFinish, onDiscard, onMinimize,
         </section>`;
       })}
       ${onAddExercise && !ws.focus && html`<button className="btn secondary block" style=${{marginTop:4,marginBottom:14}} onClick=${() => setSheet('add')}><${Icon} name="plus"/> Add exercise</button>`}
+      ${!ws.focus && html`<label className="panel" style=${{display:'block',marginBottom:14}}><span className="muted small">Workout notes</span>
+        <textarea className="text" rows="2" maxLength="1000" style=${{width:'100%',marginTop:6}} value=${ws.notes || ''} placeholder="How it felt, what to change next time"
+          onChange=${e => save({ ...ws, notes:e.target.value })}></textarea></label>`}
       ${ws.cool && !ws.focus && html`<${RoutineCard} kind="cool" r=${ws.cool} ws=${ws} now=${tnow}
-        onMinutes=${v => routineMinutes('cool', v)} onUpdate=${r => save({ ...ws, cool:r })}/>`}
+        onMinutes=${v => routineMinutes('cool', v)} onUpdate=${r => save({ ...ws, cool:r })} onStyle=${f => onPrefs && onPrefs('coolFree', f)}/>`}
       <div style=${{textAlign:'center',marginTop:8}}><button className="link" style=${{color:'var(--p-red)'}} onClick=${() => setSheet('discard')}>Discard workout</button></div>
     </div>
 
@@ -6768,10 +6815,16 @@ function NativeLogger({ ws, save, units, hist, plates, msFor, onFinish, onDiscar
         const w = sent.current;
         return routineSwap(kind, w[kind], i, w.summary || [], w.equipment, w.cardio, Date.now(), w.noBands);
       },
+      routineStyle({ kind, free }){
+        const w = sent.current;
+        if(props.current.onPrefs) props.current.onPrefs(kind + 'Free', !!free);
+        return routineStyle(w[kind], kind, !!free);
+      },
       routine({ kind, min }){
         const w = sent.current;
         if(props.current.onPrefs) props.current.onPrefs(kind, min);
-        return { min, items:routineKeep(routineFor(kind, w.summary || [], min, w.equipment, w.cardio, w.noBands), w[kind]), run:null, paused:null, removed:(w[kind] || {}).removed, swapped:(w[kind] || {}).swapped };
+        const r = { min, items:routineKeep(routineFor(kind, w.summary || [], min, w.equipment, w.cardio, w.noBands), w[kind]), run:null, paused:null, removed:(w[kind] || {}).removed, swapped:(w[kind] || {}).swapped };
+        return min > 0 && w[kind] && w[kind].free ? routineStyle(r, kind, true) : r;
       },
       summary(){
         const p = props.current, e = finalizeWorkout(sent.current, p.hist), ms = p.msFor ? p.msFor(e) : null;
@@ -6817,7 +6870,7 @@ function NativeLogger({ ws, save, units, hist, plates, msFor, onFinish, onDiscar
     const bg = theme.bg.match(/\d+/g) || [0, 0, 0];
     theme.dark = (+bg[0] + +bg[1] + +bg[2]) < 384;
     const guides = {};
-    ws.ex.forEach(e => { const g = guideFor(e); guides[e.n] = { cues: g ? g.cues : [], demo: demoUrl(e.n), fig: figShapes(e), clip: clipFor(e) }; });
+    ws.ex.forEach(e => { const g = guideFor(e); guides[e.n] = { cues: g ? (g.setup ? [g.setup, ...g.cues] : g.cues) : [], demo: demoUrl(e.n), fig: figShapes(e), clip: clipFor(e) }; });
     const tests = {}; Object.entries(TEST_METHODS).forEach(([k, t]) => { tests[k] = t.steps; });
     N.show({ ws:JSON.stringify(ws), units, effort: EFFORT_RPE ? 'rpe' : 'rir', theme:JSON.stringify(theme), guides:JSON.stringify(guides), tests:JSON.stringify(tests),
       plates:platesKey,   // your home bar and plates while you train at home, else null (gym plates)
@@ -9055,14 +9108,15 @@ function LogSheet({ log, num, ms = [], units, onDelete, onClose, onShare, onEdit
   const [sure, setSure] = useState(false);
   // Edit workout: weights and reps as typed (in your units), sets added or removed; Save changes works the totals out again
   const [edit, setEdit] = useState(null);
-  const startEdit = () => setEdit(log.ex.map(e => ({ ...e, sets:e.sets.map(x => ({ ...x, ws: x.band || x.w == null ? '' : String(toUnit(x.w, units)), rs:String(x.r) })) })));
+  const [notesEd, setNotesEd] = useState('');
+  const startEdit = () => { setNotesEd(log.notes || ''); setEdit(log.ex.map(e => ({ ...e, sets:e.sets.map(x => ({ ...x, ws: x.band || x.w == null ? '' : String(toUnit(x.w, units)), rs:String(x.r) })) }))); };
   const updE = f => setEdit(cur => { const n = clone(cur); f(n); return n; });
   const saveEdit = () => onEdit(edit.map(e => ({ ...e, sets:e.sets.map(({ ws, rs, ...x }) => {
     const r = parseInt(rs, 10) || 0;
     if(x.band || ws === '' && x.w == null) return { ...x, r };
     const v = parseFloat(String(ws).replace(',', '.'));
     return { ...x, w: v > 0 ? Math.round((units === 'kg' ? v / KG : v) * 100) / 100 : 0, r };
-  }) })));
+  }) })), notesEd);
   if(edit) return html`<${Sheet} title=${`Edit ${log.name}`} sub="Fix a weight or reps, or add and remove sets. Totals and PRs update when you save." onClose=${onClose}>
     ${edit.map((e, ei) => {
       let wi = 0;
@@ -9084,6 +9138,8 @@ function LogSheet({ log, num, ms = [], units, onDelete, onClose, onShare, onEdit
           ss.push({ ...l, type: l.type === 'W' ? 'N' : l.type, video:undefined }); })}>+ Add set</button>
       </div>`;
     })}
+    <label style=${{display:'block',margin:'4px 0 12px'}}><span className="muted small">Workout notes</span>
+      <textarea className="text" rows="3" maxLength="1000" style=${{width:'100%',marginTop:6}} value=${notesEd} placeholder="How it felt, what to change next time" onChange=${e => setNotesEd(e.target.value)}></textarea></label>
     <p className="note">A set with no reps is removed when you save. An exercise with no sets left is removed too.</p>
     <${SheetButton} className="btn primary block" onClick=${saveEdit}><${Icon} name="check"/> Save changes</${SheetButton}>
     <button className="btn secondary block" style=${{marginTop:10}} onClick=${() => setEdit(null)}>Cancel</button>
@@ -9208,7 +9264,7 @@ const LIB = [
   ['ohp','Overhead press','vpush','bb','Shoulders','ohp',1,'bar'],
   ['dbohp','Seated dumbbell press','vpush','db','Shoulders','ohp',.4,'each'],
   ['machineohp','Machine shoulder press','vpush','machine','Shoulders','ohp',.85,''],
-  ['bbrow','Barbell row','hpull','bb','Back','bench',.75,''],
+  ['bbrow','Barbell row','hpull','bb','Back','bench',.75,'bar'],
   ['csrow','Chest-supported dumbbell row','hpull','db','Back','bench',.3,'each'],
   ['cablerow','Seated cable row','hpull','cable','Back','bench',.65,''],
   ['dbrow','One-arm dumbbell row','hpull','db','Back','bench',.36,'each'],
@@ -9216,7 +9272,7 @@ const LIB = [
   ['pullup','Pull-up','vpull','bw','Back','bench',0,''],
   ['latpd','Lat pulldown','vpull','cable','Back','bench',.6,''],
   ['chinup','Chin-up','vpull','bw','Back','bench',0,''],
-  ['cablefly','Cable fly','chestiso','cable','Chest','bench',.12,''],
+  ['cablefly','Cable fly','chestiso','cable','Chest','bench',.12,'each'],
   ['pecdeck','Pec deck','chestiso','machine','Chest','bench',.35,''],
   ['dbfly','Dumbbell fly','chestiso','db','Chest','bench',.1,'each'],
   ['cablelat','Cable lateral raise','sidedelt','cable','Shoulders','ohp',.13,''],
@@ -11265,7 +11321,7 @@ function App(){
   // What the workout records: warm-ups without a bike or rower when there's no gym
   // warm-up and cool-down minutes: yours, or 5 + 5 for 45-minute sessions and 10 + 5 otherwise, so the total fits
   const warmDef = settings.warmMin == null ? (settings.minutes <= 45 ? 5 : 10) : settings.warmMin, coolDef = settings.coolMin == null ? 5 : settings.coolMin;
-  const workOpts = { warm:warmDef, cool:coolDef, equipment: traveling ? (trip.equip.includes('barbell') ? 'home' : 'db') : homeToday ? 'home' : settings.equipment,
+  const workOpts = { warm:warmDef, cool:coolDef, warmFree:!!settings.warmFree, coolFree:!!settings.coolFree, equipment: traveling ? (trip.equip.includes('barbell') ? 'home' : 'db') : homeToday ? 'home' : settings.equipment,
     where: traveling ? 'travel' : both ? where : null };
   // Warm-up and cool-down cardio: whatever machines you have at home, none while traveling, the lot at the gym
   workOpts.cardio = traveling ? [] : workOpts.equipment === 'home' || workOpts.equipment === 'db' ? (settings.homeCardio || []) : null;
@@ -11406,11 +11462,11 @@ function App(){
     document.addEventListener('visibilitychange', f); return () => document.removeEventListener('visibilitychange', f); }, []);
   useEffect(() => {
     if(!system) return;
-    const lk = workout ? `${units}|${JSON.stringify(workout)}` : '';
+    const lk = workout ? `${units}|${settings.effort}|${JSON.stringify(workout)}` : '';
     if(lk !== systemSent.current.live && system.live){
       systemSent.current.live = lk;
       const id = workout && workout.id;
-      system.live(workout ? JSON.stringify(workout) : '', units, workout ? workout.name : '').then(r => {
+      system.live(workout ? JSON.stringify(workout) : '', units, workout ? workout.name : '', settings.effort === 'rpe' ? 'rpe' : 'rir').then(r => {
         if(!r || !r.newer) return;
         try{ const w = JSON.parse(r.newer); if(w && w.id === id && w.ex) saveWorkout(w, true); }catch(e){}
       });
@@ -12135,8 +12191,8 @@ Reply with only a JSON object and nothing else: {"label": short food name, "serv
     const l = logs.find(x => x.id === sheet.id);
     if(l) var logSheet = html`<${LogSheet} log=${l} num=${ms.number[l.id]} ms=${ms.list.filter(m => m.id === l.id)} units=${units} onClose=${() => setSheet(null)} onShare=${() => setSheet({ type:'share', id:l.id })}
       onDelete=${() => { saveLogs(logs.filter(x => x.id !== l.id)); toast(l.kind === 'lift' ? 'Workout deleted.' : l.kind === 'cardio' ? 'Cardio deleted.' : 'Entry deleted.'); }}
-      onEdit=${ex => { const before = buildHistory(logs.filter(x => x.kind === 'lift' && x.id !== l.id && x.start < l.start));
-        const nl = retotalLog(l, ex, before);
+      onEdit=${(ex, notes) => { const before = buildHistory(logs.filter(x => x.kind === 'lift' && x.id !== l.id && x.start < l.start));
+        const nl = retotalLog(l, ex, before, notes);
         if(!nl.ex.length){ saveLogs(logs.filter(x => x.id !== l.id)); toast('Workout deleted: it had no sets left.'); return; }
         saveLogs(logs.map(x => x.id === l.id ? nl : x)); setSheet({ type:'log', id:l.id }); toast('Workout updated.'); }}/>`;
   }
@@ -12391,7 +12447,7 @@ Reply with only a JSON object and nothing else: {"label": short food name, "serv
         onAddExercise=${pick => { saveWorkout(addToWorkout(workout, pick, hist, settings)); toast(`${pick.n} added to this workout.`); }}
         onSwapProgram=${(lx, opt) => { const d = sessions.find(x => x.id === workout.dayId); const orig = d && d.ex[lx.oi];
           if(orig) applySwap(orig, { dayId:d.id, idx:lx.oi }, opt, 'program'); }}
-        onPrefs=${(k, v) => { if(!workout || !workout.wod) saveSettings({ ...settings, [k === 'warm' ? 'warmMin' : 'coolMin']:v }); }}
+        onPrefs=${(k, v) => { if(!workout || !workout.wod) saveSettings({ ...settings, [k === 'warm' ? 'warmMin' : k === 'cool' ? 'coolMin' : k]:v }); }}
         onFinish=${finishWorkout} onDiscard=${() => { saveWorkout(null); setLoggerOpen(false); toast('Workout discarded.'); }}
         onMinimize=${() => setLoggerOpen(false)}/>`}
       ${sheetEl || logSheet}
