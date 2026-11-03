@@ -344,6 +344,7 @@
     if (left && !confirm(`${left} change${left === 1 ? ' hasn’t' : 's haven’t'} synced to your account yet and will be lost. Sign out anyway?`)) return;
     close();
     clearDevices();                                       // the Watch, widgets and Lock Screen stop showing this account
+    await window.caliberFriends?.pushUnregister?.().catch(() => {});   // and this phone stops getting its friend alerts
     await sb.auth.signOut().catch(() => {});
     clearLocal();
   }

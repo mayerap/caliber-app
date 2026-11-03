@@ -46,6 +46,19 @@
     list: () => rpc('friend_list'),
     // [{ user_id, nickname, incoming, created_at }]
     inbox: () => rpc('friend_inbox'),
+    // Friend alerts (supabase/migrations/20261105000000_push_friends.sql): this phone's Apple push token, and whether
+    // it gets friend requests and new friends. The token is kept so signing out can take it back.
+    pushRegister: async (token, env, on) => {
+      await rpc('push_register', { p_token: token, p_env: env || 'production', p_friends: !!on });
+      localStorage.setItem('calibre:pushToken', JSON.stringify(token));
+    },
+    pushUnregister: async () => {
+      let t = null;
+      try { t = JSON.parse(localStorage.getItem('calibre:pushToken') || 'null'); } catch (e) {}
+      if (!t || !(await uid())) return;
+      await rpc('push_unregister', { p_token: t });
+      localStorage.removeItem('calibre:pushToken');
+    },
 
     // Activity: { log_id, kind: 'lift' | 'cardio', at (ms), item } for one finished session; posting again replaces it
     post: async a => {

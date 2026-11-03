@@ -71,6 +71,8 @@
       listen: listen(plugin, 'workout'),
       // replaces scheduled reminders ([{ id, title, body, at }]) and the "Rest's up" alert; -> { granted, scheduled }
       reminders: (items, rest) => plugin.reminders({ items, rest }).catch(() => ({ granted: false, scheduled: 0 })),
+      // friend alerts: this phone's Apple push token; ask may show iPhone's permission prompt -> { granted, token?, env? }
+      push: ask => plugin.push({ ask: !!ask }).catch(() => ({ granted: false })),
       // water and caffeine tapped on a Home Screen widget since Caliber was last open (taken once)
       pending: () => plugin.pending().then(r => r.items || []).catch(() => []) };
   }
