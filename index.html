@@ -262,18 +262,42 @@ textarea.notes{width:100%;min-height:90px;border-radius:12px;border:1px solid va
 .photos .add{border:1.5px dashed var(--faint);display:grid;place-items:center;color:var(--muted);font-size:13px;font-weight:600}
 /* ---------- Today overview ---------- */
 .wkcard{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:16px 14px 12px}
-.wk7{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-top:10px}
-.wk7 button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:4px 0 2px;border-radius:12px}
+.wk7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-top:10px}
+.wk7 button{display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 0 5px;border-radius:12px;min-width:0;
+  background:color-mix(in srgb,var(--c) 14%,var(--surface))}
+.wk7 button.st-done{background:color-mix(in srgb,var(--c) 28%,var(--surface))}
+.wk7 button.st-off,.wk7 button.st-skip{background:transparent}
+.wk7 button.st-missed{background:color-mix(in srgb,var(--c) 7%,var(--surface))}
+.wk7 button.today{box-shadow:inset 0 0 0 1.5px var(--c)}
+.wk7 .st-done .k{color:var(--text)}
+.wk-key{display:flex;gap:14px;margin:8px 4px 0;font-size:11px;color:var(--muted)}
+.wk-key span{display:inline-flex;align-items:center;gap:5px}
+.wk-key i{width:8px;height:8px;border-radius:50%}
 .wk7 .lt{font-size:12px;font-weight:600;color:var(--faint)}
 .wk7 .today .lt{color:var(--text)}
-.wk7 .c{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;box-shadow:inset 0 0 0 2px var(--c);color:var(--c)}
+.wk7 .c{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;box-shadow:inset 0 0 0 2px var(--c);color:var(--c);background:var(--surface)}
 .wk7 .c svg{width:16px;height:16px}
-.wk7 .c.done{background:var(--c);box-shadow:none;color:#fff}
-.wk7 .c.off{box-shadow:none}
+.wk7 .c.done{background:var(--c);box-shadow:none;color:var(--bg)}
+.wk7 .c.off{box-shadow:none;background:none}
 .wk7 .c.off::after{content:'';width:10px;height:2px;border-radius:1px;background:var(--faint)}
 .wk7 .c.skip{box-shadow:inset 0 0 0 2px var(--faint);color:var(--faint);opacity:.6}
 .wk7 .c.missed{opacity:.4}
-.wk7 .today .c{outline:2px solid var(--accent);outline-offset:3px}
+.wk7 .today .c:not(.done){box-shadow:inset 0 0 0 2px var(--c),0 0 0 3px color-mix(in srgb,var(--c) 14%,var(--surface)),0 0 0 5px var(--c)}
+.wk7 .today .lt{font-weight:800}
+.wk7 .k{font-size:10px;color:var(--muted);max-width:100%;padding:0 2px;box-sizing:border-box;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wk7 .today .k{color:var(--text)}
+.blockbar{display:flex;flex-direction:column;gap:6px;width:100%;margin-top:12px;padding:12px 2px 0;border-top:1px solid var(--line);text-align:left}
+.bb-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.bb-h b{font-size:14px;white-space:nowrap}
+.bb-row{display:grid}
+.bb-steps{align-items:end;height:52px;padding-top:22px;box-sizing:border-box}
+.bb-row i{position:relative;display:block;height:10px;border-radius:4px 4px 2px 2px;background:color-mix(in srgb,var(--pc) 28%,var(--surface))}
+.bb-row i.past,.bb-row i.now{background:var(--pc)}
+.bb-row i.now{box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--pc)}
+.bb-row i b{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);font-size:11px;font-weight:800;font-style:normal;line-height:1;padding:3px 7px;border-radius:6px;background:var(--pc);color:var(--bg);white-space:nowrap}
+.bb-lbl span{display:flex;align-items:center;gap:4px;font-size:10.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bb-lbl span i{width:7px;height:7px;border-radius:50%;flex:none}
+.bb-lbl span.now{color:var(--text);font-weight:700}
 .ov{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:18px 18px 6px;margin-top:12px}
 .ov-stats{display:grid;grid-template-columns:repeat(3,1fr)}
 .ov-stats div + div{border-left:1px solid var(--line);padding-left:16px}
@@ -282,6 +306,81 @@ textarea.notes{width:100%;min-height:90px;border-radius:12px;border:1px solid va
 .ov-time-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 2px 8px;font-weight:600;font-size:14px}
 .ov-time-btn{display:inline-flex;align-items:center;gap:6px;margin:12px 0 2px;font-size:14px}
 .ov-time-btn svg{width:16px;height:16px}
+/* dashed "planned" outlines: the accent, nudged toward the text color so it holds up on light surfaces */
+:root{--accent-edge:color-mix(in srgb,var(--accent-fill) 72%,var(--text))}
+.wop{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:6px;align-items:end;margin-top:12px}
+.wop-col{display:flex;flex-direction:column;gap:4px}
+.wop-col i,.wop-k{display:block;height:16px;border-radius:4px;box-sizing:border-box}
+.wop-k{width:12px;height:12px;border-radius:3px}
+.wop-col i.on,.wop-k.on{background:var(--accent-fill)}
+.wop-col i.miss,.wop-k.miss{border:1.5px solid color-mix(in srgb,var(--text) 28%,var(--surface))}
+.wop-col i.due,.wop-k.due{border:1.5px dashed var(--accent-edge)}
+.wop-col span{font-size:10px;color:var(--muted);text-align:center;margin-top:2px;min-height:12px}
+.wop-col span.now{color:var(--text);font-weight:700}
+.msets{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.msets-row{display:grid;grid-template-columns:84px minmax(0,1fr) 48px;gap:8px;align-items:center;font-size:14px}
+.msets-row .num{text-align:right;font-size:15px}
+.msets-track{position:relative;height:16px}
+.msets-axis .msets-track{height:12px}
+.msets-axis b{position:absolute;font-size:11px;font-weight:500;color:var(--muted);transform:translateX(-50%)}
+.msets-axis b:first-child{transform:none}
+.msets-track .band{position:absolute;top:0;bottom:0;background:var(--raised);border-radius:3px}
+.msets-track .plan{position:absolute;left:0;top:3px;bottom:3px;border:1.5px dashed var(--accent-edge);border-radius:3px;box-sizing:border-box}
+.msets-track .done{position:absolute;left:0;top:3px;bottom:3px;background:var(--accent-fill);border-radius:3px}
+.msk{width:14px;height:10px;border-radius:3px;box-sizing:border-box}
+.hm-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:10px 0 12px}
+.hm-stats div{background:var(--raised);border-radius:12px;padding:8px 10px;display:flex;flex-direction:column}
+.hm-stats b{font-size:22px;line-height:1.1}
+.hm-stats small{font-size:11px;color:var(--muted)}
+.hm{display:grid;grid-template-columns:30px repeat(7,minmax(0,1fr));gap:4px;align-items:center}
+.hm-h{font-size:11px;color:var(--muted);text-align:center}
+.hm-m{font-size:11px;color:var(--muted)}
+.hm-d{height:24px;border-radius:5px;background:var(--raised);display:grid;place-items:center;box-sizing:border-box;padding:0}
+.hm-d.hm-off{background:color-mix(in srgb,var(--raised) 55%,transparent)}
+.hm-d.hm-none{background:transparent}
+.hm-d.hm-miss,.hm-key-miss{background:transparent;border:1.5px solid color-mix(in srgb,var(--text) 30%,var(--surface))}
+.hm-d.hm-due{background:transparent;border:1.5px dashed color-mix(in srgb,var(--text) 30%,var(--surface))}
+.hm-d.hm-now{outline:2px solid var(--text);outline-offset:1px}
+.hm-d i,.hm-key-pr{width:7px;height:7px;border-radius:50%;background:var(--text);box-shadow:0 0 0 1.5px var(--surface);display:inline-block}
+.prt{padding:6px 16px 12px}
+.prt-m{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;padding:12px 0 2px 28px}
+.prt-r{display:grid;grid-template-columns:18px minmax(0,1fr) auto;gap:10px;align-items:stretch;padding:2px 0}
+.prt-r .row-main{padding:8px 0}
+.prt-r > span:last-child{padding:8px 0}
+.prt-rail{position:relative;display:flex;justify-content:center}
+.prt-rail::before{content:'';position:absolute;top:0;bottom:0;width:2px;background:color-mix(in srgb,var(--text) 14%,var(--surface))}
+.prt-rail i{position:relative;margin-top:14px;width:11px;height:11px;border-radius:50%;border:2px solid var(--accent-fill);background:var(--surface);box-sizing:border-box;box-shadow:0 0 0 3px var(--surface)}
+.prt-rail i.main{background:var(--accent-fill)}
+.prot-row{display:flex;align-items:center;gap:10px;margin-top:8px}
+.prot-row > span{width:56px;flex:none}
+.prot-row > div{flex:1;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.prot-row .pd{height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:var(--muted);border:1.5px solid color-mix(in srgb,var(--text) 22%,var(--surface));box-sizing:border-box}
+.prot-row .pd.hit{background:var(--accent-fill);border-color:transparent;color:var(--accent-ink)}
+.prot-row .pd.due{border-style:dashed}
+.msk.done{background:var(--accent-fill)}.msk.plan{border:1.5px dashed var(--accent-edge)}.msk.band{background:var(--raised)}
+.rec-map{--body-o:color-mix(in srgb,var(--text) 9%,var(--surface));--body-m:color-mix(in srgb,var(--text) 19%,var(--surface))}
+.rec-figs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0 8px}
+.rec-figs figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:4px}
+.rec-figs .body-fig{max-width:150px}
+.rec-figs figcaption{font-size:12px;color:var(--muted);font-weight:600}
+.rec-legend{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.rec-legend span{display:flex;flex-direction:column;gap:5px;font-size:11px;color:var(--muted);line-height:1.25}
+.rec-legend i{height:10px;border-radius:3px;display:block}
+.rec-row{display:grid;grid-template-columns:12px 92px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.rec-row .sw{width:12px;height:12px;border-radius:3px}
+.rec-row .bar{height:6px;border-radius:3px;background:var(--raised);position:relative;overflow:hidden}
+.rec-row .bar i{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:color-mix(in srgb,var(--text) 60%,var(--surface))}
+.rec-row .v{text-align:right;display:flex;flex-direction:column;line-height:1.15}
+.rec-row .v b{font-family:var(--font-num);font-size:17px}
+.rec-row .v small{font-size:11px;color:var(--muted);white-space:nowrap}
+.ov-clash{display:flex;flex-direction:column;gap:10px;margin:10px 0 4px;padding:12px 14px;border-radius:14px;background:var(--raised)}
+.ov-clash-top{display:flex;gap:10px;align-items:flex-start}
+.ov-clash-top svg{width:20px;height:20px;flex:none;margin-top:1px}
+.ov-clash-top span{display:flex;flex-direction:column;gap:3px}
+.ov-clash-top b{font-size:15px}
+.ov-clash-top small{font-size:13px;color:var(--muted);line-height:1.45}
+.rec-key{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--muted)}
+.rec-key i{display:inline-block;width:14px;height:10px;border-radius:3px;box-sizing:border-box}
 .ov-core{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 4px;padding:10px 12px;border-radius:14px;background:var(--raised);cursor:pointer}
 .ov-core span{display:flex;flex-direction:column;gap:2px;min-width:0}
 .ov-core b{font-size:14px}
@@ -335,16 +434,11 @@ textarea.notes{width:100%;min-height:90px;border-radius:12px;border:1px solid va
 .loc-pill .sw{width:13px;height:13px;color:var(--faint);margin-left:2px}
 .loc-pill.home{background:color-mix(in srgb,var(--p-green) 16%,var(--surface));border-color:color-mix(in srgb,var(--p-green) 40%,transparent)}
 .loc-pill.home svg:first-child{color:var(--p-green)}
-.block-ring{position:relative;width:60px;height:60px;display:grid;place-items:center}
-.block-ring svg{position:absolute;inset:0}
-.br-c{display:flex;flex-direction:column;align-items:center;line-height:1}
-.br-c b{font-size:20px}
-.br-c small{font-size:10px;color:var(--muted);margin-top:1px}
 .home-note{display:flex;align-items:flex-start;gap:8px;margin:12px 4px 0;font-size:14px;color:var(--muted)}
 .home-note svg{width:16px;height:16px;flex:none;margin-top:2px;color:var(--p-green)}
 .tile{position:relative;overflow:hidden}
 .tile.hold{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
-.tile .spark{position:absolute;left:12px;right:12px;bottom:30px;height:26px;width:calc(100% - 24px);opacity:.35;pointer-events:none}
+.tile .spark{display:block;width:100%;height:auto;margin-top:6px;pointer-events:none}
 .tiles.quick .tile{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .tile .s{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block}
 .title-row{display:flex;align-items:flex-end;gap:10px}
@@ -371,14 +465,22 @@ textarea.notes{width:100%;min-height:90px;border-radius:12px;border:1px solid va
 .vs .badge{width:44px;height:44px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:800;flex:none}
 .vs .me .av{box-shadow:0 0 0 3px var(--accent)}
 .stronger{font-size:12px;font-weight:800;letter-spacing:.02em;padding:4px 10px;border-radius:8px;background:var(--p-yellow);color:#1a1a1a}
-.pb{margin:14px 0}
-.pb-h{display:flex;align-items:baseline;gap:10px;font-weight:700;margin-bottom:8px}
-.pb-h .up{color:var(--p-green);font-size:14px}
-.pb-h .down{color:var(--p-red);font-size:14px}
-.pb-r{display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:center;margin:6px 0}
-.pb-r .bar{height:12px;border-radius:6px;background:var(--raised);overflow:hidden}
-.pb-r .bar i{display:block;height:100%;border-radius:6px}
-.pb-r .num{font-size:17px;min-width:64px;text-align:right}
+.vs .score{display:flex;flex-direction:column;align-items:center;flex:none;min-width:64px}
+.vs .score b{font-size:32px;line-height:1}
+.vs .score small{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap}
+.duels{padding:12px 16px}
+.duel-who{display:flex;justify-content:space-between;gap:10px;font-size:13px;font-weight:700;margin-bottom:4px}
+.duel-who span{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.duel{padding:6px 0}
+.duel-h{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:baseline}
+.duel-h .num{font-size:16px;font-weight:500;color:var(--muted);white-space:nowrap}
+.duel-h .num.win{color:var(--text);font-weight:700}
+.duel-h .lbl{font-size:12px;color:var(--muted);text-align:center;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.duel-b{display:grid;grid-template-columns:1fr 1fr;gap:2px;height:8px;margin-top:5px}
+.duel-b span{display:flex;background:var(--raised);border-radius:0 4px 4px 0;overflow:hidden}
+.duel-b span:first-child{justify-content:flex-end;border-radius:4px 0 0 4px}
+.duel-b i{display:block;height:100%;background:var(--muted)}
+.duel-b i.me{background:var(--accent-fill)}
 .fcode{font-family:var(--font-num, inherit);font-size:34px;font-weight:800;letter-spacing:.08em;text-align:center;margin:6px 0 12px}
 .feed-card{padding:14px 16px;border-bottom:1px solid var(--line)}
 /* Today's friends card (FriendsWeek) */
@@ -866,14 +968,12 @@ input:focus:not(:focus-visible),textarea:focus:not(:focus-visible),button:focus:
 .wk7 .c{box-shadow:inset 0 0 0 2px var(--c),0 0 12px color-mix(in srgb,var(--c) 32%,transparent);background:linear-gradient(180deg,var(--surface-hi),var(--surface))}
 .wk7 .c.done{background:var(--c);box-shadow:0 0 16px color-mix(in srgb,var(--c) 60%,transparent);color:var(--bg)}
 .wk7 .c.off{background:none;box-shadow:none}
-.wk7 .today .c{outline:none;box-shadow:inset 0 0 0 2px var(--c),0 0 0 3px var(--bg),0 0 0 5px var(--c),0 0 24px color-mix(in srgb,var(--c) 65%,transparent)}
+.wk7 .today .c:not(.done){outline:none;box-shadow:inset 0 0 0 2px var(--c),0 0 0 3px color-mix(in srgb,var(--c) 14%,var(--surface)),0 0 0 5px var(--c),0 0 24px color-mix(in srgb,var(--c) 65%,transparent)}
 /* header: location selector and block ring */
 .loc-seg{display:inline-flex;padding:3px;gap:2px;border-radius:10px;background:linear-gradient(180deg,var(--surface-hi),var(--surface));border:1px solid var(--line);box-shadow:0 1px 0 var(--line-hi) inset}
 .loc-seg button{display:inline-flex;align-items:center;gap:4px;height:28px;padding:0 9px;border-radius:7px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
 .loc-seg button svg{width:13px;height:13px}
 .loc-seg button[aria-pressed="true"]{background:linear-gradient(180deg,var(--accent-fill-hi),var(--accent-fill));color:var(--accent-ink);box-shadow:0 1px 0 rgba(255,255,255,.35) inset,0 0 16px var(--glow-a)}
-.block-ring .cur{filter:drop-shadow(0 0 5px var(--rc))}
-.br-c b{font-family:var(--font-num)}
 /* tab bar */
 .tabbar{background:color-mix(in srgb,var(--bg) 92%,transparent)}
 .tab{text-transform:uppercase;letter-spacing:.07em;font-size:9.5px;position:relative}
@@ -944,6 +1044,18 @@ button:active:not(:disabled){transform:scale(.97)}
 .ms-head svg{width:22px;height:22px}
 /* ---- Phase 3: charts, morphs, skeletons ---- */
 .lchart{position:relative;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.rseg{display:inline-grid;grid-auto-flow:column;padding:2px;border-radius:9px;background:var(--raised);flex-shrink:0}
+.rseg button{border:0;background:transparent;color:var(--muted);font:600 11px var(--font-ui);padding:5px 8px;border-radius:7px;min-height:28px}
+.rseg button[aria-pressed="true"]{background:var(--surface);color:var(--text);font-weight:700}
+.tc-tip{position:absolute;top:2px;transform:translateX(-50%);z-index:2;background:var(--raised);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:12px;line-height:1.4;pointer-events:none;white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,.22)}
+.tc-tip .b{font-weight:700}
+.tc-tip .muted{color:var(--muted)}
+.chart-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:2px}
+.chart-head > :first-child{white-space:nowrap}
+.chart-sub{font-size:13px;color:var(--text);margin-top:2px}
+.chart-legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted);margin-top:6px}
+.chart-legend span{display:inline-flex;align-items:center;gap:6px}
+.chart-legend i{display:inline-block}
 .lchart .lc-line{stroke-dasharray:1;stroke-dashoffset:1;filter:drop-shadow(0 0 4px var(--glow-a))}
 .lchart .lc-area{opacity:0}
 .lchart .lc-dot{opacity:0;transform-box:fill-box;transform-origin:center}
@@ -1047,7 +1159,7 @@ button:active:not(:disabled){transform:scale(.97)}
 <script src="vendor/htm.umd.js"></script>
 <script src="vendor/xlsx.full.min.js"></script>
 <script>
-const { useState, useEffect, useRef } = React;
+const { useState, useEffect, useRef, Fragment } = React;
 const SheetCtx = React.createContext(() => {});
 const html = htm.bind(React.createElement);
 
@@ -1363,13 +1475,6 @@ const E1RM = {
   'Overhead press': [146,147,149,150,150,152,154,155]
 };
 
-const VOLUME = [
-  { m:'Chest', v:14, lo:10, hi:20 }, { m:'Back', v:16, lo:12, hi:22 },
-  { m:'Quads', v:12, lo:10, hi:20 }, { m:'Hamstrings', v:6, lo:8, hi:16 },
-  { m:'Glutes', v:8, lo:6, hi:16 },  { m:'Shoulders', v:12, lo:8, hi:20 },
-  { m:'Biceps', v:8, lo:8, hi:18 },  { m:'Triceps', v:9, lo:6, hi:16 }
-];
-const CONSISTENCY = [4,4,3,4,4,2,4,3];
 
 /* =========================================================
    Helpers
@@ -1693,22 +1798,24 @@ function Header({ kicker, title, meta, side, brand }){
   </header>`;
 }
 // Where you are in the program: one segment per week, in that week's phase color
-function BlockRing({ phases, idx, onClick }){
-  const n = phases.length, R = 24, C = 2 * Math.PI * R, gap = n > 1 ? Math.min(4, C / n * .18) : 0, seg = C / n - gap;
-  const many = n > 16;   // long target-date plans: a single progress arc instead of segments
-  const label = `Week ${idx + 1} of ${n}, ${PHASES[phases[idx]] ? PHASES[phases[idx]].name.toLowerCase() : 'in progress'}. Tap for the block timeline`;
-  return html`<button className="block-ring" aria-label=${label} onClick=${onClick}>
-    <svg viewBox="0 0 60 60" width="60" height="60" aria-hidden="true">
-      <g transform="rotate(-90 30 30)">
-        ${many ? html`<circle cx="30" cy="30" r=${R} fill="none" stroke="var(--raised)" strokeWidth="5"/>
-          <circle cx="30" cy="30" r=${R} fill="none" stroke=${(PHASES[phases[idx]] || {}).color || 'var(--accent)'} strokeWidth="5" strokeLinecap="round"
-            strokeDasharray=${`${C * (idx + 1) / n} ${C}`}/>`
-        : phases.map((ph, i) => html`<circle key=${i} className=${i === idx ? 'cur' : ''} style=${i === idx ? { '--rc':(PHASES[ph] || {}).color || 'var(--accent)' } : null} cx="30" cy="30" r=${R} fill="none" stroke=${(PHASES[ph] || {}).color || 'var(--accent)'}
-            strokeWidth=${i === idx ? 6.5 : 5} strokeDasharray=${`${seg} ${C - seg}`} strokeDashoffset=${-(C / n) * i}
-            opacity=${i < idx ? .9 : i === idx ? 1 : .22}/>`)}
-      </g>
-    </svg>
-    <span className="br-c"><b className="num">${idx + 1}</b><small>of ${n}</small></span>
+const PHASE_SHORT = { acc:'Build', int:'Heavy', rea:'Peak', del:'Deload', peak:'Peak' };
+const STEP_H = { acc:10, int:18, rea:26, peak:26, del:6 };   // block bar: heavier phases stand taller
+/* The block as a row of weeks: done weeks shaded, this week solid, the rest outlined, phase names under each run */
+function BlockBar({ phases, idx, onClick }){
+  const n = phases.length, named = phases.some(p => p !== phases[0]) || phases[0] !== 'acc';
+  const runs = []; phases.forEach((p, i) => { const last = runs[runs.length - 1]; if(last && last.p === p) last.to = i; else runs.push({ p, from:i, to:i }); });
+  const nextPh = phases.slice(idx + 1).find(p => p !== phases[idx]), nextAt = nextPh ? phases.indexOf(nextPh, idx + 1) : -1;
+  const note = !named ? `${n - 1 - idx > 0 ? `${n - 1 - idx} ${n - 1 - idx === 1 ? 'week' : 'weeks'} left` : 'Last week'}`
+    : nextAt === idx + 1 ? `${PHASE_SHORT[nextPh] || 'New phase'} from next week` : nextAt > 0 ? `${PHASE_SHORT[nextPh]} in ${nextAt - idx} weeks` : idx === n - 1 ? 'Last week of the block' : '';
+  const label = `Week ${idx + 1} of ${n}${PHASES[phases[idx]] && named ? `, ${PHASES[phases[idx]].name.toLowerCase()}` : ''}. ${note}. Opens Program`;
+  return html`<button className="blockbar" aria-label=${label} onClick=${onClick}>
+    <span className="bb-h"><b>Week ${idx + 1} of ${n}${named && PHASE_SHORT[phases[idx]] ? ` · ${PHASE_SHORT[phases[idx]]}` : ''}</b><span className="muted small">${note}</span></span>
+    <span className="bb-row bb-steps" style=${{ gridTemplateColumns:`repeat(${n},minmax(0,1fr))`, gap: n > 16 ? 1 : 4 }} aria-hidden="true">
+      ${phases.map((p, i) => { const r = runs.find(x => i >= x.from && i <= x.to), h = named ? Math.min(30, (STEP_H[p] || 10) + (p === 'acc' ? (i - r.from) * 2 : 0)) : 10;
+        return html`<i key=${i} className=${i < idx ? 'past' : i === idx ? 'now' : ''} style=${{ height:h, '--pc':named ? (PHASES[p] || {}).color || 'var(--accent-fill)' : 'var(--accent-fill)' }}>
+          ${i === idx && html`<b>Wk ${idx + 1}</b>`}</i>`; })}</span>
+    ${named && n <= 16 && html`<span className="bb-row bb-lbl" style=${{ gridTemplateColumns:`repeat(${n},minmax(0,1fr))`, gap:4 }} aria-hidden="true">
+      ${runs.map((r, i) => html`<span key=${i} className=${idx >= r.from && idx <= r.to ? 'now' : ''} style=${{ gridColumn:`${r.from + 1} / ${r.to + 2}` }}><i style=${{ background:(PHASES[r.p] || {}).color }}></i>${PHASE_SHORT[r.p] || ''}</span>`)}</span>`}
   </button>`;
 }
 
@@ -2158,15 +2265,17 @@ function fitSession(day, target, warm, cool, opts = {}){
 
 // A planned session that's all running or other timed work, with no loads: shown as cardio
 const runDay = d => d && d.type === 'lift' && d.session && d.session.ex.length > 0 && d.session.ex.every(e => exUnit(e.n) && !(e.w > 0));
-function WeekStrip({ week, logs, onDay }){
+function WeekStrip({ week, logs, onDay, ring, onRing }){
   const ti = todayIndex(), mon = weekKey();
   const cells = week.map((d, i) => {
     const date = addDays(mon, i), lg = logs.find(l => l.date === date && !l.extra);
     const type = lg ? lg.kind : runDay(d) ? 'cardio' : d.type;
-    const color = d.skipped && !lg ? 'var(--faint)' : (KIND_COLOR[type] || 'var(--faint)');
     const state = lg ? 'done' : d.skipped ? 'skip' : d.type === 'rest' ? 'off' : i < ti ? 'missed' : 'plan';
+    // each day wears its workout type's color (lift, cardio, active rest) on a tinted tile; skipped days go quiet
+    const color = state === 'skip' || state === 'off' ? 'var(--faint)' : KIND_COLOR[type === 'rest' ? 'active' : type] || 'var(--accent-fill)';
     const label = `${WEEKDAYS[i]}: ${lg ? `${lg.name}, done` : d.skipped ? 'skipped' : describeDay(d)}`;
-    return { i, color, state, label, icon: state === 'done' ? 'check' : state === 'skip' ? 'skip' : runDay(d) ? DAY_TYPES.cardio.icon : DAY_TYPES[d.type] ? DAY_TYPES[d.type].icon : 'moon' };
+    const k = lg ? lg.name : d.skipped ? 'Skipped' : d.type === 'rest' ? 'Rest' : d.type === 'lift' && d.session ? d.session.name : runDay(d) || type === 'cardio' ? 'Cardio' : DAY_TYPES[d.type] ? DAY_TYPES[d.type].label || '' : '';
+    return { i, color, state, type, label, k, icon: state === 'done' ? 'check' : state === 'skip' ? 'close' : runDay(d) ? DAY_TYPES.cardio.icon : DAY_TYPES[d.type] ? DAY_TYPES[d.type].icon : 'moon' };
   });
   const planned = week.filter(d => d.type === 'lift' && !d.skipped).length;
   const inWeek = l => l.date >= mon && l.date <= addDays(mon, 6);
@@ -2180,11 +2289,15 @@ function WeekStrip({ week, logs, onDay }){
       <span>${done} of ${planned} ${planned === 1 ? 'session' : 'sessions'} done${extras ? `, plus ${extras} extra` : ''}${next != null ? `. Next: ${week[next].session.name} ${next === ti + 1 ? 'tomorrow' : WEEKDAYS[next].slice(0, 3)}` : ''}</span>
     </div>
     <div className="wk7">
-      ${cells.map(c => html`<button key=${c.i} className=${c.i === ti ? 'today' : ''} aria-label=${c.label} onClick=${() => onDay(c.i)}>
+      ${cells.map(c => html`<button key=${c.i} className=${'st-' + c.state + (c.i === ti ? ' today' : '')} style=${{'--c':c.color}} aria-label=${c.label} onClick=${() => onDay(c.i)}>
         <span className="lt">${WEEKDAYS[c.i].charAt(0)}</span>
-        <span className=${'c ' + c.state} style=${{'--c':c.color}}>${c.state !== 'off' && html`<${Icon} name=${c.icon}/>`}</span>
+        <span className=${'c ' + c.state}>${c.state !== 'off' && html`<${Icon} name=${c.icon}/>`}</span>
+        <span className="k">${c.k}</span>
       </button>`)}
     </div>
+    ${(() => { const kinds = ['lift', 'cardio', 'active'].filter(t => cells.some(c => c.state !== 'skip' && c.state !== 'off' && c.type === t));
+      return kinds.length > 1 && html`<div className="wk-key">${kinds.map(t => html`<span key=${t}><i style=${{background:KIND_COLOR[t]}}></i>${DAY_TYPES[t].label}</span>`)}</div>`; })()}
+    ${ring && ring.phases.length > 1 && html`<${BlockBar} phases=${ring.phases} idx=${ring.idx} onClick=${onRing}/>`}
   </section>`;
 }
 
@@ -2265,37 +2378,48 @@ function sessionLoad(day){
   return Object.fromEntries(['Chest','Shoulders','Biceps','Triceps','Forearms','Back','Abs','Glutes','Adductors','Quads','Hamstrings','Calves'].map(k => [k, level(sets[k] || 0)]));
 }
 const LOAD_MIX = [0, 38, 60, 82, 100];
-function BodyFigure({ view, load }){
-  return html`<svg className="body-fig" viewBox="0 0 200 420" role="img" aria-label=${`${view === 'front' ? 'Front' : 'Back'} of the body. ${
+/* Recovery on the body: four steps of the theme's accent, from ready (the body's own neutral) to just worked,
+   so it reads without red and green and follows the theme. */
+const REC_STEP = p => p >= 85 ? 0 : p >= 60 ? 1 : p >= 40 ? 2 : 3;
+const REC_FILL = ['var(--body-m)', 'color-mix(in srgb,var(--accent-fill) 38%,var(--body-m))', 'color-mix(in srgb,var(--accent-fill) 68%,var(--body-m))', 'var(--accent-fill)'];
+const REC_LABEL = ['Ready', 'Nearly', 'Recovering', 'Just worked'];
+// fills: muscle → color (recovery); worked: muscles today's session works, drawn with a light outline
+function BodyFigure({ view, load, fills, worked, label }){
+  return html`<svg className="body-fig" viewBox="0 0 200 420" role="img" aria-label=${label || `${view === 'front' ? 'Front' : 'Back'} of the body. ${
       BODY_PATHS[view].filter(([m]) => load[m]).map(([m]) => `${m}: ${LOAD_NAMES[load[m]].toLowerCase()}`).join(', ') || 'No muscles worked on this side'}`}>
     <path d=${BODY_OUTLINE} className="body-o"/>
     ${BODY_PATHS[view].map(([m, ds]) => ds.map((d, i) => html`<path key=${m + i} d=${d} className="body-m"
-      style=${load[m] ? { fill:`color-mix(in srgb, var(--accent) ${LOAD_MIX[load[m]]}%, var(--body-m))` } : null}/>`))}
+      style=${fills ? { fill:fills[m] || 'var(--body-m)', stroke:worked && worked.has(m) ? 'color-mix(in srgb,var(--text) 70%,transparent)' : 'var(--surface)', strokeWidth:worked && worked.has(m) ? 2 : 1.5, strokeLinejoin:'round' }
+        : load[m] ? { fill:`color-mix(in srgb, var(--accent) ${LOAD_MIX[load[m]]}%, var(--body-m))` } : null}/>`))}
   </svg>`;
 }
-function MuscleMap({ day, onBack }){
+function MuscleMap({ day, onBack, logs }){
   const load = sessionLoad(day);
+  const rec = Object.fromEntries(muscleRecovery(logs || []).map(r => [r.m, r]));
+  const fills = Object.fromEntries(Object.entries(rec).map(([m, r]) => [m, REC_FILL[REC_STEP(r.pct)]]));
+  const worked = new Set(Object.keys(load).filter(m => load[m] >= 2));
   const sum = v => BODY_PATHS[v].reduce((a, [m]) => a + load[m], 0);
   const [view, setView] = useState(() => sum('back') > sum('front') ? 'back' : 'front');
   const col = side => BODY_LABELS[view][side].map(([m, y]) => html`<span key=${m} className="body-l" style=${{ top:`${y / 4.2}%` }}>
-    <b>${m}</b><small className=${load[m] ? 'on' : ''}>${LOAD_NAMES[load[m]]}</small></span>`);
+    <b>${m}</b><small className=${worked.has(m) ? 'on' : ''}>${worked.has(m) ? 'Today' : ''}${worked.has(m) && rec[m] ? ' · ' : ''}${rec[m] ? `${rec[m].pct}%` : worked.has(m) ? '' : '—'}</small></span>`);
   return html`<div className="body-map">
-    <div className="body-head"><h2>Muscles worked</h2>
+    <div className="body-head"><h2>Today and recovery</h2>
       <${Seg} label="Body side" value=${view} onChange=${setView} options=${[{ v:'front', l:'Front' }, { v:'back', l:'Back' }]}/></div>
     <div className="body-grid">
       <div className="body-col left">${col('left')}</div>
-      <${BodyFigure} view=${view} load=${load}/>
+      <${BodyFigure} view=${view} load=${load} fills=${fills} worked=${worked}
+        label=${`${view === 'front' ? 'Front' : 'Back'} of the body. Today works ${[...worked].join(', ').toLowerCase() || 'nothing on this side'}. ${Object.values(rec).filter(r => r.pct < 85).map(r => `${r.m} ${r.pct}% recovered`).join(', ')}`}/>
       <div className="body-col right">${col('right')}</div>
     </div>
     <div className="body-foot">
-      <span className="body-scale" aria-hidden="true">${LOAD_MIX.map((p, i) => html`<i key=${i} style=${{ height:6 + i * 3, background:i ? `color-mix(in srgb, var(--accent) ${p}%, var(--body-m))` : 'var(--body-m)' }}></i>`)}</span>
-      <small>Muscle load</small>
+      <span className="rec-key"><i style=${{ border:'2px solid color-mix(in srgb,var(--text) 70%,transparent)' }}></i>Today</span>
+      <span className="rec-key"><i style=${{ background:REC_FILL[2] }}></i><i style=${{ background:REC_FILL[3] }}></i>Recovering</span>
       <button className="link flip-link" onClick=${onBack}><${Icon} name="swap"/>Session</button>
     </div>
   </div>`;
 }
 const TIME_OPTS = [30, 45, 60, 75, 90];
-function SessionOverview({ day, warm, cool, units, label, onOpen, budget, time, core }){
+function SessionOverview({ day, warm, cool, units, label, onOpen, budget, time, core, logs, lighter }){
   const [flipped, setFlipped] = useState(false);
   const [timeOpen, setTimeOpen] = useState(false);
   const sets = totalSets(day);
@@ -2332,6 +2456,16 @@ function SessionOverview({ day, warm, cool, units, label, onOpen, budget, time, 
     ${core && html`<label className="ov-core">
         <span><b>Add core</b><small>${core.n}, ${core.sets} sets, ${core.on ? 'added, about' : 'adds about'} ${core.min} min</small></span>
         <input type="checkbox" checked=${core.on} onChange=${e => core.onToggle(e.target.checked)} aria-label=${`Add ${core.n} to today’s session, about ${core.min} minutes`}/></label>`}
+    ${lighter && html`<div className="ov-clash" role="note">
+        <div className="ov-clash-top">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 3 2 20h20L12 3Z"/><path d="M12 10v4"/><path d="M12 17.5v.5"/></svg>
+          <span><b>${lighter.conflicts.map(c => c.m).join(' and ').replace(/ and (?=.* and )/g, ', ')} ${lighter.conflicts.length === 1 && !/s$/.test(lighter.conflicts[0].m) ? 'is' : 'are'} still recovering</b>
+            <small>${lighter.conflicts.map(c => `${c.m} ${c.pct}%`).join(', ')}. ${lighter.mode === 'lighter' ? `10% lighter today on ${lighter.exNames.join(', ')}.` : 'Today works them hard.'}</small></span>
+        </div>
+        ${lighter.mode === 'lighter' ? html`<button className="link" style=${{alignSelf:'flex-start'}} onClick=${() => lighter.onSet(null)}>Undo, back to the planned weights</button>`
+          : html`<div className="btns2"><button className="btn primary" style=${{height:44}} onClick=${() => lighter.onSet('lighter')}>Go 10% lighter</button>
+            <button className="btn secondary" style=${{height:44}} onClick=${() => lighter.onSet('keep')}>Keep the plan</button></div>`}
+      </div>`}
     <div className="mchips">${mus.map(m => html`<span key=${m} className="chip">${m}</span>`)}
       <button className="chip accent flip-chip" onClick=${() => setFlipped(true)} aria-label="Flip to see the muscles this session works"><${Icon} name="body"/>Muscle map</button></div>
     <div className="keyl">
@@ -2344,7 +2478,7 @@ function SessionOverview({ day, warm, cool, units, label, onOpen, budget, time, 
     ${(extra || test) && html`<p className="note" style=${{margin:'0 2px 12px'}}>${test ? `Find your ${test.n.toLowerCase()} max today. ` : ''}${extra}${extra ? '.' : ''}</p>`}
   </section>
   <section className="ov ov-back" aria-label="Muscles this session works" aria-hidden=${!flipped} inert=${flipped ? undefined : ''}>
-    ${flipped && html`<${MuscleMap} day=${day} onBack=${() => setFlipped(false)}/>`}
+    ${flipped && html`<${MuscleMap} day=${day} logs=${logs} onBack=${() => setFlipped(false)}/>`}
   </section>
   </div></div>`;
 }
@@ -2367,12 +2501,16 @@ function useHold(onHold, ms = 450){
   });
   return [handlers, () => suppress.current];
 }
-function Spark({ data, color }){
+/* Tile sparkline: the line, a dotted baseline at where it started, and a dot on the latest value */
+function Spark({ data }){
   if(!data || data.length < 2) return null;
-  const W = 100, H = 30, lo = Math.min(...data), hi = Math.max(...data), r = hi - lo || 1;
-  const pts = data.map((v, i) => `${(i / (data.length - 1) * W).toFixed(1)},${(H - 3 - (v - lo) / r * (H - 6)).toFixed(1)}`).join(' ');
-  return html`<svg className="spark" viewBox=${`0 0 ${W} ${H}`} preserveAspectRatio="none" aria-hidden="true">
-    <polyline points=${pts} fill="none" stroke=${color || 'var(--accent)'} stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/></svg>`;
+  const W = 100, H = 26, lo = Math.min(...data), hi = Math.max(...data), r = hi - lo || 1;
+  const X = i => 3 + i / (data.length - 1) * (W - 6), Y = v => H - 4 - (v - lo) / r * (H - 8);
+  const d = data.map((v, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+  return html`<svg className="spark" viewBox=${`0 0 ${W} ${H}`} aria-hidden="true">
+    <line x1="0" x2=${W} y1=${Y(data[0])} y2=${Y(data[0])} stroke="color-mix(in srgb,var(--text) 30%,var(--surface))" strokeWidth="1.2" strokeDasharray="1.5 3" strokeLinecap="round"/>
+    <path d=${d} fill="none" stroke="var(--accent-fill)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <circle cx=${X(data.length - 1)} cy=${Y(data[data.length - 1])} r="3" fill="var(--accent-fill)" stroke="var(--surface)" strokeWidth="1.5"/></svg>`;
 }
 function QuickTiles({ q, units, openSheet }){
   const [now, setNow] = useState(Date.now());
@@ -2387,7 +2525,7 @@ function QuickTiles({ q, units, openSheet }){
     caffeine:{ v:`${caffTotal} mg`, s: inSys ? `${inSys} in system` : 'Tap to log', tap:() => openSheet({ type:'caffeine' }) },
     protein:{ v: q.protein ? `${q.protein.val} g` : 'Set up', s: q.protein ? `of ${q.protein.target} g` : 'Get targets', tap:() => openSheet({ type: q.protein ? 'food' : 'nutSetup' }) },
     fasting:{ v: cur ? hm(now - cur.start) : 'Off', s: cur ? `of ${pr.fast} h` : `${pr.fast}:${pr.eat} fast`, tap:q.onFasting },
-    progress:{ v: pg ? `${pg.gain >= 0 ? '+' : ''}${pg.gain}` : '—', s: pg ? `${pg.short} e1RM, ${units}` : 'Log a lift twice', spark: pg ? pg.data : null, tap:() => openSheet({ type:'progQuick' }) },
+    progress:{ v: pg ? `${pg.data[pg.data.length - 1]}` : '—', s: pg ? `${pg.gain >= 0 ? '+' : '−'}${Math.abs(pg.gain)} ${units}, ${pg.short}` : 'Log a lift twice', spark: pg ? pg.data : null, tap:() => openSheet({ type:'progQuick' }) },
     streak:{ v: st ? `${st.weeks} wk` : '0 wk', s: st ? `${st.thisWeek} of ${st.planned} this week` : 'Hit your plan', tap:q.onStreak }
   };
   return html`<div>
@@ -2395,7 +2533,7 @@ function QuickTiles({ q, units, openSheet }){
       return html`<button key=${i + k} className=${'tile' + (d.spark ? ' has-spark' : '')} aria-label=${`${t.label}: ${d.v}, ${d.s}. Press and hold to swap this tile`}
         ...${hold(i)} onClick=${() => { if(held()) return; d.tap(); }}>
         <span className="l"><${Icon} name=${t.icon}/>${t.label}</span>
-        <span className="v num" style=${k === 'progress' && pg && pg.gain < 0 ? { color:'var(--p-red)' } : null}>${/\d/.test(d.v) && k !== 'fasting' ? html`<${Odo} value=${d.v}/>` : d.v}</span><span className="s">${d.s}</span>
+        <span className="v num">${/\d/.test(d.v) && k !== 'fasting' ? html`<${Odo} value=${d.v}/>` : d.v}</span><span className="s">${d.s}</span>
         ${d.spark && html`<${Spark} data=${d.spark}/>`}</button>`; })}</div>
     ${!q.seenHint && html`<p className="muted small" style=${{margin:'6px 4px 0'}}>Tap Water to add a glass. Press and hold any tile to swap it.</p>`}
   </div>`;
@@ -2545,6 +2683,8 @@ function SnapshotTiles({ readiness, showReadiness, nutOn, targets, foodToday, bw
   const t = sumFood(foodToday);
   const pts = bwTrend(bw), last = bw.length ? bw.slice().sort((a, b) => a.date < b.date ? -1 : 1).pop() : null;
   const ago = last ? dayDiff(last.date, localDate()) : null;
+  const recent = pts.filter(p => dayDiff(p.date, localDate()) <= 30), wd = recent.map(p => toUnit(p.t, units));
+  const wch = wd.length >= 2 ? Math.round((wd[wd.length - 1] - wd[0]) * 10) / 10 : null;
   return html`<div className="tiles">
     ${showReadiness ? html`<button className="tile" onClick=${() => openSheet({ type:'readiness' })}>
         <span className="l"><${Icon} name="pulse"/>Readiness</span>
@@ -2561,14 +2701,15 @@ function SnapshotTiles({ readiness, showReadiness, nutOn, targets, foodToday, bw
     <button className="tile" onClick=${() => openSheet({ type:'bw' })}>
       <span className="l"><${Icon} name="scale"/>Weight</span>
       <span className="v num">${pts.length ? html`<${Odo} value=${fmtW(pts[pts.length - 1].t, units)}/>` : 'Log'}</span>
-      <span className="s">${!last ? 'Track your trend' : ago === 0 ? `${units} trend, today` : `${units} trend`}</span></button>
+      <span className="s">${!last ? 'Track your trend' : wch != null ? `${wch > 0 ? '+' : wch < 0 ? '−' : ''}${Math.abs(wch)} ${units} in 30d` : ago === 0 ? `${units} trend, today` : `${units} trend`}</span>
+      ${wd.length >= 3 && html`<${Spark} data=${wd}/>`}</button>
   </div>`;
 }
 
-function LiftToday({ day, units, openSheet, warm, cool, tiles, budget, time, core }){
+function LiftToday({ day, units, openSheet, warm, cool, tiles, budget, time, core, logs, lighter }){
   const open = (ex, i) => morphOpen(() => openSheet({ type:'exercise', ex, loc:{ dayId:day.id, idx:i } }));
   return html`<div className="today-body">
-      <${SessionOverview} day=${day} warm=${warm} cool=${cool} units=${units} onOpen=${open} budget=${budget} time=${time} core=${core}/>
+      <${SessionOverview} day=${day} warm=${warm} cool=${cool} units=${units} onOpen=${open} budget=${budget} time=${time} core=${core} logs=${logs} lighter=${lighter}/>
       ${tiles}
       ${(() => {
         const t = day.ex.find(e => e.test);
@@ -2617,7 +2758,7 @@ function RestToday({ next, units, warm, cool, tiles }){
     </div>
   </div>`;
 }
-function Today({ week, units, readiness, openSheet, onSkip, blockMeta, todayLog, bw, nutOn, targets:weekT, todayTargets, foodToday, checkinDue, logs, warm, cool, budget, time, core, where, setWhere, whereAsk, onRemember, whereSrc, dayName, locSuggest, onLocSuggest, quick, ring, onRing, trip, fitWeek, perpOffer, friendsCard, requestNote }){
+function Today({ week, units, readiness, openSheet, onSkip, blockMeta, todayLog, bw, nutOn, targets:weekT, todayTargets, foodToday, checkinDue, logs, warm, cool, budget, time, core, lighter, where, setWhere, whereAsk, onRemember, whereSrc, dayName, locSuggest, onLocSuggest, quick, ring, onRing, trip, fitWeek, perpOffer, friendsCard, requestNote }){
   const ti = todayIndex();
   const traveling = tripOn(trip, localDate());
   const d = week[ti];
@@ -2631,11 +2772,10 @@ function Today({ week, units, readiness, openSheet, onSkip, blockMeta, todayLog,
     foodToday=${foodToday} bw=${bw} units=${units} openSheet=${openSheet} calMode=${quick && quick.calMode} onCalMode=${quick && quick.onCalMode}/>${quick && html`<${QuickTiles} q=${quick} units=${units} openSheet=${openSheet}/>`}</div>`;
   return html`
     <div className="screen wide-ok">
-      <${Header} brand=${true} kicker=${dateStr} title=${titles[d.type]} meta=${blockMeta} side=${(ring || (setWhere && d.type === 'lift' && live)) ? html`<div className="side-stack">
+      <${Header} brand=${true} kicker=${dateStr} title=${titles[d.type]} meta=${blockMeta} side=${(setWhere && d.type === 'lift' && live) ? html`<div className="side-stack">
         ${setWhere && d.type === 'lift' && live && html`<div className="loc-seg" role="group" aria-label="Where you're training today">
           <button aria-pressed=${where !== 'home'} onClick=${() => setWhere('gym')}><${Icon} name="lift"/>Gym</button>
           <button aria-pressed=${where === 'home'} onClick=${() => setWhere('home')}><${Icon} name="home"/>Home</button></div>`}
-        ${ring && html`<${BlockRing} phases=${ring.phases} idx=${ring.idx} onClick=${onRing}/>`}
       </div>` : null}/>
       ${live && d.type === 'lift' && locSuggest && !whereAsk && html`<div className="panel" style=${{marginTop:12}} role="status">
         <p style=${{margin:'0 0 10px'}}>Looks like you’re ${locSuggest === 'home' ? 'at home' : 'at the gym'}. Train ${locSuggest === 'home' ? 'at home' : 'at the gym'} today?</p>
@@ -2694,7 +2834,7 @@ function Today({ week, units, readiness, openSheet, onSkip, blockMeta, todayLog,
           <span className="row-main"><span className="row-title" style=${{display:'block'}}>${w.name} timer ${lv.paused ? 'paused' : 'running'}</span>
             <span className="row-sub">${wodClock(secs)} so far. Tap to get back to it and log your result.</span></span>
           <${Icon} name="chev" className="chev"/></button>`; })()}
-      <${WeekStrip} week=${week} logs=${logs} onDay=${i => morphOpen(() => openSheet({ type:'dayEdit', index:i }))}/>
+      <${WeekStrip} week=${week} logs=${logs} ring=${ring} onRing=${onRing} onDay=${i => morphOpen(() => openSheet({ type:'dayEdit', index:i }))}/>
       ${requestNote && html`<${RequestNote} ...${requestNote}/>`}
       ${friendsCard && html`<${FriendsWeek} ...${friendsCard}/>`}
       ${checkinDue && html`<button className="callout" onClick=${() => openSheet({ type:'checkin', k:checkinDue })}>
@@ -2712,7 +2852,7 @@ function Today({ week, units, readiness, openSheet, onSkip, blockMeta, todayLog,
       ${live && d.type === 'lift' && setWhere && where === 'home' && html`<p className="home-note"><${Icon} name="home"/>${d.session.homeSwaps
         ? `At home: ${d.session.homeSwaps} ${d.session.homeSwaps === 1 ? 'exercise' : 'exercises'} swapped to fit your setup.`
         : 'At home: everything in this session fits your setup.'}${d.session.homeDropped && d.session.homeDropped.length ? ` Left out: ${d.session.homeDropped.join(', ')}.` : ''}${d.session.dbCapped ? ` Reps raised on ${d.session.dbCapped} dumbbell ${d.session.dbCapped === 1 ? 'exercise' : 'exercises'} to match your heaviest dumbbells.` : ''}${d.session.plateCapped ? ` ${d.session.plateCapped} barbell ${d.session.plateCapped === 1 ? 'load was' : 'loads were'} adjusted to your home plates.` : ''}</p>`}
-      ${live && d.type === 'lift' && html`<${LiftToday} day=${d.session} units=${units} openSheet=${openSheet} budget=${budget} time=${time} core=${core} warm=${warm} cool=${cool} tiles=${tiles}/>`}
+      ${live && d.type === 'lift' && html`<${LiftToday} day=${d.session} units=${units} openSheet=${openSheet} budget=${budget} time=${time} core=${core} logs=${logs} lighter=${lighter} warm=${warm} cool=${cool} tiles=${tiles}/>`}
       ${live && d.type === 'cardio' && html`<div className="today-body" style=${{marginTop:12}}><${CardioToday} c=${d.cardio || DEFAULT_CARDIO}/>${tiles}</div>`}
       ${live && d.type === 'active' && html`<div className="today-body" style=${{marginTop:12}}><${ActiveToday} a=${d.active || DEFAULT_ACTIVE}/>${tiles}</div>`}
       ${(d.skipped || d.type === 'rest') && html`<${RestToday} next=${next} units=${units} warm=${warm} cool=${cool} tiles=${tiles}/>`}
@@ -3101,6 +3241,7 @@ function History({ logs, nums = {}, units, openSheet, bw, plannedFor, checkinPro
   if(view === 'calendar') return html`<div className="screen">
     <${Header} title="History"/>
     ${toggle}
+    <${TrainingHeatmap} logs=${logs} plannedFor=${plannedFor} onDay=${d => openSheet({ type:'calDay', date:d })}/>
     <${CalendarView} logs=${logs} bw=${bw} plannedFor=${plannedFor} month=${month} setMonth=${setMonth} onDay=${d => openSheet({ type:'calDay', date:d })}/>
   </div>`;
   if(!logs.length) return html`<div className="screen">
@@ -3190,11 +3331,163 @@ function LineChart({ data, labels }){
     </svg></div>`;
 }
 
-function Progress({ units, week, logs, hist, planned, bw, bwGoal, onLogBw, onDeleteBw, foodProps, focus, caffProps, caliberProps, ms, onMilestones }){
+/* ---------- Shared chart pieces (docs/charts-options: one chart style) ----------
+   Round-number axes that never zoom tighter than about 10% of the value, 3 to 5 gridlines, neutral dots for single
+   readings, an accent trend line, accent markers for PRs, a dotted goal line, a dashed projection, and press-and-drag
+   for exact values. Colors come from the theme tokens. */
+function niceScale(lo, hi, minSpan = 0){
+  if(!(hi > lo)){ lo -= 1; hi += 1; }
+  if(hi - lo < minSpan){ const mid = (hi + lo) / 2; lo = mid - minSpan / 2; hi = mid + minSpan / 2; }
+  const raw = (hi - lo) / 3, mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const step = [1, 2, 2.5, 5, 10].map(m => m * mag).find(v => v >= raw) || 10 * mag;
+  const min = Math.floor(lo / step) * step, max = Math.ceil(hi / step) * step, ticks = [];
+  for(let v = min; v <= max + step / 2; v += step) ticks.push(Math.round(v * 100) / 100);
+  return { min, max, ticks };
+}
+const RANGES = [['1M', 30], ['4M', 120], ['1Y', 365], ['All', 0]];
+function RangeSeg({ value, onChange }){
+  return html`<div className="rseg" role="group" aria-label="Time range">${RANGES.map(([l, d]) =>
+    html`<button key=${l} aria-pressed=${value === d} onClick=${() => onChange(d)}>${l}</button>`)}</div>`;
+}
+// A remembered range per chart: 4 months to start
+function useRange(key, def = 120){
+  const [r, setR] = useState(() => { const v = store.get('range:' + key, def); return RANGES.some(x => x[1] === v) ? v : def; });
+  return [r, v => { setR(v); store.set('range:' + key, v); }];
+}
+const inRange = (d, days) => !days || dayDiff(d, localDate()) < days;
+const shortDate = d => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' });
+function TimeChart({ points, trend, marks, goal, proj, fmtV = v => Math.round(v), label, minSpan, height = 200 }){
+  const W = 350, H = height, pl = 38, pr = 8, pt = 10, pb = 24;
+  const all = [...points.map(p => p.v), ...(trend || []).filter(Boolean).map(p => p.v), ...(goal ? [goal.v] : []), ...(proj || []).map(p => p.v)];
+  const sc = niceScale(Math.min(...all), Math.max(...all), minSpan == null ? Math.max(...all) * .1 : minSpan);
+  const dates = [...points.map(p => p.d), ...(proj || []).map(p => p.d)].sort();
+  const first = dates[0], span = Math.max(1, dayDiff(first, dates[dates.length - 1]));
+  const x = d => pl + dayDiff(first, d) / span * (W - pl - pr), y = v => pt + (1 - (v - sc.min) / (sc.max - sc.min)) * (H - pt - pb);
+  let line = '', prev = false;
+  (trend || []).forEach(p => { if(!p){ prev = false; return; } line += `${prev ? 'L' : 'M'}${x(p.d).toFixed(1)},${y(p.v).toFixed(1)} `; prev = true; });
+  // 3 to 5 date labels, evenly spaced
+  const nLab = Math.min(4, Math.max(2, Math.round(span / 25) + 1)), labs = Array.from({ length:nLab }, (_, i) => addDays(first, Math.round(span * i / (nLab - 1))));
+  const box = useRef(null), [shown, setShown] = useState(false), [si, setSi] = useState(null);
+  useEffect(() => {
+    const el = box.current; if(!el) return;
+    if(!('IntersectionObserver' in window)){ setShown(true); return; }
+    const io = new IntersectionObserver(es => { if(es.some(e => e.isIntersecting)){ setShown(true); io.disconnect(); } }, { threshold:.35 });
+    io.observe(el); return () => io.disconnect();
+  }, []);
+  const pick = e => { const r = box.current.getBoundingClientRect(), px = (e.clientX - r.left) / r.width * W;
+    let best = 0; points.forEach((p, i) => { if(Math.abs(x(p.d) - px) < Math.abs(x(points[best].d) - px)) best = i; }); setSi(best); };
+  const sp = si != null && points[si], tipLeft = sp ? Math.min(78, Math.max(22, x(sp.d) / W * 100)) : 0;
+  const lastP = points[points.length - 1];
+  return html`<div className=${'lchart tchart' + (shown ? ' drawn' : '')} ref=${box}
+      onPointerDown=${e => { try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(_){} pick(e); }} onPointerMove=${e => { if(si != null || e.pointerType === 'mouse' && e.buttons) pick(e); }}
+      onPointerUp=${() => {}} onPointerLeave=${() => setSi(null)} onPointerCancel=${() => setSi(null)}>
+    ${sp && html`<div className="tc-tip" style=${{ left:`${tipLeft}%` }}>${(sp.tip || [shortDate(sp.d), fmtV(sp.v)]).map((t, i) => html`<div key=${i} className=${i === 0 ? 'muted' : i === 1 ? 'b' : ''}>${t}</div>`)}</div>`}
+    <svg viewBox=${`0 0 ${W} ${H}`} style=${{width:'100%',height:'auto',display:'block'}} role="img" aria-label=${label}>
+      ${sc.ticks.map(v => html`<g key=${'g' + v}><line x1=${pl} x2=${W - pr} y1=${y(v)} y2=${y(v)} stroke="var(--line)"/>
+        <text x=${pl - 6} y=${y(v) + 4} textAnchor="end" fontSize="12" fill="var(--muted)">${fmtV(v)}</text></g>`)}
+      ${goal && html`<g><line x1=${pl} x2=${W - pr} y1=${y(goal.v)} y2=${y(goal.v)} stroke="var(--text)" strokeWidth="1.2" strokeDasharray="1 4" strokeLinecap="round"/>
+        <text x=${pl + 6} y=${y(goal.v) - 5} fontSize="12" fill="var(--text)">${goal.label}</text></g>`}
+      ${points.map((p, i) => html`<circle key=${'p' + i} cx=${x(p.d)} cy=${y(p.v)} r="2.6" fill="color-mix(in srgb,var(--text) 42%,var(--surface))"/>`)}
+      ${line && html`<path className="lc-line" d=${line} pathLength="1" fill="none" stroke="var(--accent-fill)" strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round"/>`}
+      ${proj && proj.length === 2 && html`<path d=${`M${x(proj[0].d)},${y(proj[0].v)} L${x(proj[1].d)},${y(proj[1].v)}`} fill="none" stroke="var(--accent-fill)" strokeWidth="2" strokeDasharray="4 4" opacity=".75"/>`}
+      ${(marks || []).map((m, i) => html`<circle key=${'m' + i} cx=${x(m.d)} cy=${y(m.v)} r="4.6" fill="var(--accent-fill)" stroke="var(--surface)" strokeWidth="2"/>`)}
+      ${!(marks || []).length && lastP && trend && trend.length && html`<circle cx=${x(trend[trend.length - 1].d)} cy=${y(trend[trend.length - 1].v)} r="4.6" fill="var(--accent-fill)" stroke="var(--surface)" strokeWidth="2"/>`}
+      ${sp && html`<line x1=${x(sp.d)} x2=${x(sp.d)} y1=${pt} y2=${H - pb} stroke="var(--text)" strokeOpacity=".45" strokeWidth="1" strokeDasharray="2 3"/>`}
+      ${sp && html`<circle cx=${x(sp.d)} cy=${y(sp.v)} r="5" fill="none" stroke="var(--text)" strokeWidth="1.5"/>`}
+      ${labs.map((d, i) => html`<text key=${'x' + i} x=${x(d)} y=${H - 6} textAnchor=${i === 0 ? 'start' : i === labs.length - 1 ? 'end' : 'middle'} fontSize="12" fill="var(--muted)">${shortDate(d)}</text>`)}
+    </svg></div>`;
+}
+// A rolling trend: the average of the last few points, broken where the gap is over two weeks
+function rollingTrend(points, n = 4){
+  const out = [];
+  points.forEach((p, i) => {
+    if(i && dayDiff(points[i - 1].d, p.d) > 14) out.push(null);
+    const win = points.slice(Math.max(0, i - n + 1), i + 1).filter(q => dayDiff(q.d, p.d) <= 21);
+    out.push({ d:p.d, v:win.reduce((a, q) => a + q.v, 0) / win.length });
+  });
+  return out;
+}
+
+/* Weeks on plan: one square per planned lift session, filled when done; this week's still-to-come dashed */
+function WeeksOnPlan({ logs, planned, week }){
+  const keys = Array.from({ length:12 }, (_, i) => weekKeyOffset(i - 11)), now = weekKey();
+  const per = keys.map(k => new Set(logs.filter(l => !l.extra && mondayOf(l.date) === k).map(l => l.date)).size);
+  const weekPlanned = (week || []).filter(d => d.type === 'lift' && !d.skipped).length || planned;
+  const finished = per.slice(0, 11), onPlan = finished.filter(n => n >= planned).length, thisWeek = per[11];
+  const next = (week || []).map((d, i) => ({ d, i })).find(({ d, i }) => i > todayIndex() && d.type === 'lift' && !d.skipped);
+  return html`<section className="panel" style=${{marginTop:4}} data-tour="weeksonplan">
+    <div className="muted small">Weeks on plan, last 12</div>
+    <div style=${{display:'flex',alignItems:'baseline',gap:8}}><span className="num big">${onPlan}</span><span className="muted">of ${finished.length} finished weeks</span></div>
+    <div className="chart-sub">${thisWeek} of ${weekPlanned} done this week${next ? ` · ${next.d.session.name} is ${WEEKDAYS[next.i]}` : ''}</div>
+    <div className="wop" role="img" aria-label=${`Workouts done each week for 12 weeks against ${planned} planned. On plan ${onPlan} of ${finished.length} finished weeks.`}>
+      ${keys.map((k, wi) => { const cur = k === now, plan = cur ? weekPlanned : planned, n = per[wi];
+        return html`<div key=${k} className="wop-col">${Array.from({ length:Math.max(plan, n) }, (_, j) => html`<i key=${j} className=${j < n ? 'on' : cur ? 'due' : 'miss'}></i>`).reverse()}
+          <span className=${cur ? 'now' : ''}>${wi % 2 === 1 || cur ? new Date(k + 'T12:00:00').toLocaleDateString('en-US', { month:'numeric', day:'numeric' }) : ''}</span></div>`; })}
+    </div>
+    <div className="chart-legend"><span><i className="wop-k on"></i>Done</span><span><i className="wop-k miss"></i>Planned, not done</span><span><i className="wop-k due"></i>Still to come</span></div>
+  </section>`;
+}
+// Hard sets per muscle: in full on the main muscle, half on helpers (as the muscle map counts them)
+function muscleSets(exList, setsOf){
+  const out = {};
+  exList.forEach(e => { const lib = LIB_BY_ID[e.id] || libForName(e.n), m = (lib && lib.m) || e.m || guessMuscle(e.n), pat = (lib && lib.pattern) || e.pattern, n = setsOf(e);
+    if(!n || !FOCUS_MUSCLES.includes(m)) return;
+    out[m] = (out[m] || 0) + n; (HELPERS[pat] || []).forEach(h => { if(h !== m) out[h] = (out[h] || 0) + n * .5; }); });
+  return out;
+}
+/* Sets per muscle this week: done so far, and what's planned by Sunday, against a 10–20 guide */
+function MuscleSets({ logs, week, focus }){
+  const k = weekKey(), ti = todayIndex();
+  const done = muscleSets(logs.filter(l => mondayOf(l.date) === k).flatMap(l => l.ex || []), e => (e.sets || []).filter(x => isWorkType(x.type)).length);
+  const doneDays = new Set(logs.filter(l => mondayOf(l.date) === k).map(l => l.date));
+  const left = muscleSets((week || []).flatMap((d, i) => i >= ti && d.type === 'lift' && !d.skipped && d.session && !doneDays.has(addDays(k, i)) ? d.session.ex : []), e => e.sets || 0);
+  const rows = FOCUS_MUSCLES.map(m => ({ m, d:Math.round(done[m] || 0), p:Math.round((done[m] || 0) + (left[m] || 0)) })).filter(r => r.p > 0).sort((a, b) => b.p - a.p);
+  if(!rows.length) return null;
+  const MAX = Math.max(24, ...rows.map(r => r.p)), pct = v => `${Math.min(100, v / MAX * 100)}%`;
+  const ok = rows.filter(r => r.p >= 10).length, short = rows.filter(r => r.p < 10).map(r => r.m.toLowerCase());
+  return html`<section className="panel" style=${{marginTop:14}} data-tour="musclesets">
+    <div className="chart-head"><span style=${{fontWeight:700,fontSize:15}}>Sets per muscle this week</span><span className="muted small">target 10–20</span></div>
+    <div style=${{display:'flex',alignItems:'baseline',gap:8}}><span className="num" style=${{fontSize:36,lineHeight:1.1}}>${ok}</span><span className="muted">of ${rows.length} on track by Sunday</span></div>
+    <div className="msets">
+      <div className="msets-row msets-axis"><span></span><span className="msets-track"><b style=${{ left:'0' }}>0</b><b style=${{ left:pct(10) }}>10</b><b style=${{ left:pct(20) }}>20</b></span><span></span></div>
+      ${rows.map(r => html`<div key=${r.m} className="msets-row">
+        <span style=${{fontWeight:600}}>${r.m}${(focus || []).includes(r.m) ? html` <span className="tag">Focus</span>` : ''}</span>
+        <span className="msets-track" aria-label=${`${r.m}: ${r.d} sets done, ${r.p} by Sunday`}>
+          <i className="band" style=${{ left:pct(10), width:`calc(${pct(20)} - ${pct(10)})` }}></i>
+          <i className="plan" style=${{ width:pct(r.p) }}></i><i className="done" style=${{ width:pct(r.d) }}></i>
+        </span>
+        <span className="num">${r.d === r.p ? r.d : `${r.d}→${r.p}`}</span>
+      </div>`)}
+    </div>
+    <div className="chart-legend"><span><i className="msk done"></i>Done</span><span><i className="msk plan"></i>Planned by Sunday</span><span><i className="msk band"></i>Target 10–20</span></div>
+    ${short.length > 0 && html`<p className="muted small" style=${{margin:'8px 0 0'}}>Short this week: ${short.join(', ')}. Make ${short.length === 1 ? 'it a focus muscle' : 'one a focus muscle'} in Training details and Caliber adds work for it.</p>`}
+  </section>`;
+}
+/* Hard sets per week, labelled with the block phase where the plan knows it */
+function SetsPerWeek({ logs, phases }){
+  const keys = Array.from({ length:12 }, (_, i) => weekKeyOffset(i - 11));
+  const vals = keys.map(k => logs.filter(l => mondayOf(l.date) === k).reduce((a, l) => a + (l.ex || []).reduce((b, e) => b + (e.sets || []).filter(x => isWorkType(x.type)).length, 0), 0));
+  const W = 350, H = 150, pl = 34, pr = 8, pt = 8, pb = 34, sc = niceScale(0, Math.max(10, ...vals), 0), bw = (W - pl - pr) / 12;
+  const y = v => pt + (1 - v / sc.max) * (H - pt - pb);
+  const PH = { acc:'Build', int:'Heavy', rea:'Peak', del:'Deload', peak:'Peak' };
+  const hasPh = keys.filter(k => phases && phases[k]).length >= 3;
+  const runs = []; keys.forEach((k, i) => { const p = hasPh && phases[k]; const last = runs[runs.length - 1];
+    if(last && last.p === p) last.to = i; else runs.push({ p, from:i, to:i }); });
+  return html`<svg viewBox=${`0 0 ${W} ${H}`} style=${{width:'100%',height:'auto',display:'block',marginTop:6}} role="img" aria-label=${`Hard sets per week, ${vals[11]} this week`}>
+    ${sc.ticks.map(v => html`<g key=${v}><line x1=${pl} x2=${W - pr} y1=${y(v)} y2=${y(v)} stroke="var(--line)"/><text x=${pl - 6} y=${y(v) + 4} textAnchor="end" fontSize="12" fill="var(--muted)">${v}</text></g>`)}
+    ${vals.map((v, i) => { if(!v) return null; const x = pl + i * bw + 3, w = bw - 6, top = y(v), r = Math.min(4, w / 2);
+      return html`<path key=${i} d=${`M${x},${y(0)} V${top + r} Q${x},${top} ${x + r},${top} H${x + w - r} Q${x + w},${top} ${x + w},${top + r} V${y(0)} Z`}
+        fill=${i === 11 ? 'color-mix(in srgb,var(--accent-fill) 45%,var(--surface))' : 'var(--accent-fill)'}/>`; })}
+    ${runs.filter(r => r.p).map((r, i) => html`<g key=${'r' + i}><line x1=${pl + r.from * bw + 4} x2=${pl + (r.to + 1) * bw - 4} y1=${H - 26} y2=${H - 26} stroke="var(--muted)"/>
+      <text x=${pl + (r.from + r.to + 1) / 2 * bw} y=${H - 10} textAnchor="middle" fontSize="11" fill="var(--muted)">${r.to - r.from >= 1 || r.p === 'del' ? PH[r.p] || '' : ''}</text></g>`)}
+    ${!hasPh && html`<text x=${pl} y=${H - 10} fontSize="12" fill="var(--muted)">12 weeks ago</text>`}
+    ${!hasPh && html`<text x=${W - pr} y=${H - 10} textAnchor="end" fontSize="12" fill="var(--muted)">This week</text>`}
+  </svg>`;
+}
+
+function Progress({ units, week, logs, hist, planned, phases, bw, bwGoal, onLogBw, onDeleteBw, foodProps, focus, caffProps, caliberProps, ms, onMilestones }){
   const [tab, setTabState] = useState(store.get('progTab', 'strength'));
   const setTab = v => { setTabState(v); store.set('progTab', v); };
-  const vol = {};
-  (week || []).forEach(d => { if(d.type === 'lift' && !d.skipped) d.session.ex.forEach(e => { vol[e.m] = (vol[e.m] || 0) + e.sets; }); });
   const mainOrder = ['backsquat','bench','deadlift','ohp'];
   const keys = Object.keys(hist).filter(k => hist[k].series.length >= 2)
     .sort((a, b) => (mainOrder.indexOf(a) + 1 || 99) - (mainOrder.indexOf(b) + 1 || 99) || hist[b].series.length - hist[a].series.length);
@@ -3207,17 +3500,28 @@ function Progress({ units, week, logs, hist, planned, bw, bwGoal, onLogBw, onDel
   const data = (real ? series.map(x => x.e1rm) : E1RM[lift]).map(v => Math.round(toUnit(v, units)));
   const labels = real ? series.map(x => new Date(x.date + 'T12:00:00').toLocaleDateString('en-US', { month:'numeric', day:'numeric' })) : null;
   const gain = data[data.length-1] - data[0];
-  const prs = logs.filter(l => l.prs && l.prs.length).sort((a, b) => b.start - a.start).flatMap(l => l.prs.map(pr => ({ ...pr, date:l.date }))).slice(0, 6);
+  // strength trend: every session as a dot, a rolling trend, PRs marked, in the chosen range
+  const [sRange, setSRange] = useRange('strength', 120);
+  const sAll = real ? hist[lift].series.map(x => ({ d:x.date, v:toUnit(x.e1rm, units), top:x.top })) : [];
+  const prIdx = new Set(); let bestSoFar = 0;
+  sAll.forEach((p, i) => { if(i && p.v > bestSoFar + (units === 'kg' ? .25 : .5)) prIdx.add(i); bestSoFar = Math.max(bestSoFar, p.v); });
+  const sIn = sAll.map((p, i) => ({ ...p, pr:prIdx.has(i) })).filter(p => inRange(p.d, sRange));
+  const sPts = (sIn.length >= 2 ? sIn : sAll.slice(-2).map((p, i, a) => ({ ...p, pr:prIdx.has(sAll.length - a.length + i) }))).map(p => ({ ...p,
+    tip:[`${shortDate(p.d)}${p.pr ? ' · PR' : ''}`, p.top ? `${p.top.band ? 'Band' : p.top.w === 0 ? 'BW' : toUnit(p.top.w, units)} × ${p.top.r}${p.top.rir != null ? ` at ${eff(p.top.rir)}` : ''}` : '', `Estimated max ${Math.round(p.v)} ${units}`] }));
+  const sTrend = rollingTrend(sPts), sT = sTrend.filter(Boolean);
+  const sNow = sT.length ? Math.round(sT[sT.length - 1].v) : 0, sChange = sT.length ? Math.round(sT[sT.length - 1].v - sT[0].v) : 0;
+  const sDays = sPts.length ? dayDiff(sPts[0].d, sPts[sPts.length - 1].d) : 0;
+  const sSpan = sDays >= 45 ? `${Math.round(sDays / 30)} months` : `${Math.max(1, Math.round(sDays / 7))} weeks`;
+  const sRate = sDays >= 21 ? Math.round(sChange / (sDays / 7) * 10) / 10 : null;
+  const sBest = sAll.reduce((m, p) => p.v > m.v ? p : m, sAll[0] || { v:0, d:localDate() });
   const wkeys = Array.from({ length:8 }, (_, i) => weekKeyOffset(i - 7));
   const liftLogs = logs.filter(l => l.kind === 'lift');
   const perWeek = wkeys.map(k => liftLogs.filter(l => mondayOf(l.date) === k));
   const sessions = perWeek.map(x => x.length);
-  const tonnage = perWeek.map(x => Math.round(x.reduce((a, l) => a + toUnit(l.vol, units), 0)));
   const done = sessions.reduce((a, b) => a + Math.min(b, planned), 0);
   const recentLifts = liftLogs.filter(l => weeksBetween(mondayOf(l.date), weekKey()) < 8);
   const avgMin = recentLifts.length ? Math.round(recentLifts.reduce((a, l) => a + (l.end - l.start) / 60000, 0) / recentLifts.length) : 0;
   const allEx = Object.entries(hist).filter(([, h]) => h.series.length).sort((a, b) => a[1].recent.date < b[1].recent.date ? 1 : -1);
-  const SCALE = 24;
   const cardio = cardioProgress(logs, wkeys, units);
   const wkLabel = k => new Date(k + 'T12:00:00').toLocaleDateString('en-US', { month:'numeric', day:'numeric' });
 
@@ -3235,17 +3539,20 @@ function Progress({ units, week, logs, hist, planned, bw, bwGoal, onLogBw, onDel
           ${options.map(([k, l]) => html`<button key=${k} className="pick" aria-pressed=${k === lift} onClick=${() => setPick(k)}>${l}</button>`)}
         </div>`}
         ${real && html`<section className="panel" style=${{marginTop:14}}>
-          <div className="muted small">Estimated 1RM</div>
-          <div style=${{display:'flex',alignItems:'baseline',gap:12}}>
-            <span className="num big"><${Odo} value=${data[data.length-1]}/><span className="muted" style=${{fontSize:20,fontWeight:600,marginLeft:4,fontStretch:'100%'}}>${units}</span></span>
-            <span className="delta" style=${gain < 0 ? {color:'var(--p-red)'} : null}>${gain >= 0 ? '+' : ''}${gain} ${units}</span>
+          <div className="chart-head"><div className="muted small">Estimated 1RM</div><${RangeSeg} value=${sRange} onChange=${setSRange}/></div>
+          <span className="num big"><${Odo} value=${sNow}/><span className="muted" style=${{fontSize:20,fontWeight:600,marginLeft:4,fontStretch:'100%'}}>${units}</span></span>
+          <div className="chart-sub">${sChange === 0 ? 'Holding steady' : `${sChange > 0 ? 'Up' : 'Down'} ${Math.abs(sChange)} ${units}`} in ${sSpan}${sRate ? ` · about ${Math.abs(sRate)} ${units} a week` : ''}</div>
+          <${TimeChart} points=${sPts} trend=${sTrend} marks=${sPts.filter(p => p.pr)} label=${`${hist[lift].n} estimated max, ${sNow} ${units} now. ${sChange >= 0 ? 'Up' : 'Down'} ${Math.abs(sChange)} ${units} in ${sSpan}.`}/>
+          <div className="chart-legend">
+            <span><i style=${{width:7,height:7,borderRadius:'50%',background:'color-mix(in srgb,var(--text) 42%,var(--surface))'}}></i>Session</span>
+            <span><i style=${{width:16,height:3,borderRadius:2,background:'var(--accent-fill)'}}></i>Trend</span>
+            <span><i style=${{width:9,height:9,borderRadius:'50%',background:'var(--accent-fill)'}}></i>PR</span>
           </div>
-          <${LineChart} data=${data} labels=${labels}/>
-          ${real && html`<div className="minis">
-            <div><span className="num">${Math.round(toUnit(hist[lift].best, units))}</span><small>Best</small></div>
-            <div><span className="num">${hist[lift].series.length}</span><small>Sessions</small></div>
-            <div><span className="num">${new Date(hist[lift].recent.date + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' })}</span><small>Last</small></div>
-          </div>`}
+          <div className="minis">
+            <div><span className="num">${Math.round(sBest.v)}</span><small>Best</small></div>
+            <div><span className="num">${sPts.filter(p => p.pr).length}</span><small>PRs in range</small></div>
+            <div><span className="num">${sPts.length}</span><small>Sessions</small></div>
+          </div>
         </section>`}
 
         ${ms && ms.count > 0 && html`<div className="section">
@@ -3254,15 +3561,7 @@ function Progress({ units, week, logs, hist, planned, bw, bwGoal, onLogBw, onDel
           <button className="btn secondary block" style=${{marginTop:-4}} onClick=${onMilestones}>All milestones</button>
         </div>`}
 
-        ${prs.length > 0 && html`<div className="section">
-          <div className="section-head"><h2>Recent PRs</h2></div>
-          <div className="list">${prs.map((pr, i) => html`<div className="row" key=${i}>
-            <span className="ic" style=${{color:'var(--p-yellow)',width:24}}><${Icon} name="trophy"/></span>
-            <span className="row-main"><span className="row-title" style=${{display:'block'}}>${pr.n}</span>
-              <span className="row-sub">${new Date(pr.date + 'T12:00:00').toLocaleDateString('en-US',{ month:'short', day:'numeric' })}, up from ${toUnit(pr.prev, units)}</span></span>
-            <span className="num" style=${{fontSize:20}}>${toUnit(pr.e1rm, units)}</span>
-          </div>`)}</div>
-        </div>`}
+        <${PrTimeline} logs=${logs} units=${units}/>
 
         ${allEx.length > 0 && html`<div className="section">
           <div className="section-head"><h2>All exercises</h2><span>Estimated 1RM</span></div>
@@ -3278,17 +3577,16 @@ function Progress({ units, week, logs, hist, planned, bw, bwGoal, onLogBw, onDel
       </div>`}
 
       ${tab === 'food' && html`<${FoodSection} ...${foodProps} caff=${caffProps} units=${units} onLogBw=${onLogBw}/>`}
-      ${tab === 'body' && html`<${BodySection} entries=${bw} units=${units} goal=${bwGoal} onLog=${onLogBw} onDelete=${onDeleteBw}/>`}
+      ${tab === 'body' && html`<${BodySection} entries=${bw} units=${units} goal=${bwGoal} onLog=${onLogBw} onDelete=${onDeleteBw}
+        pace=${foodProps && foodProps.nut && foodProps.nut.on && foodProps.nut.goal !== 'maintain' ? (foodProps.nut.goal === 'lose' ? -foodProps.nut.rate : foodProps.nut.rate) : null}/>`}
 
       ${tab === 'training' && html`<div>
+        <${WeeksOnPlan} logs=${liftLogs} planned=${planned} week=${week}/>
+        <${MuscleSets} logs=${liftLogs} week=${week} focus=${focus}/>
         <${RecoveryPanel} logs=${logs}/>
         <section className="panel" style=${{marginTop:14}}>
-          <div className="muted small">Volume lifted, last 8 weeks</div>
-          <div style=${{display:'flex',alignItems:'baseline',gap:12}}>
-            <span className="num big">${fmtK(tonnage[7])}<span className="muted" style=${{fontSize:20,fontWeight:600,marginLeft:4,fontStretch:'100%'}}>${units}</span></span>
-            <span className="muted">this week</span>
-          </div>
-          <${Bars} data=${tonnage} labels=${wkeys.map((k, i) => i === 7 ? 'Now' : wkLabel(k))} units=${units}/>
+          <div className="chart-head"><span style=${{fontWeight:700,fontSize:15}}>Hard sets per week</span><span className="muted small">last 12 weeks</span></div>
+          <${SetsPerWeek} logs=${liftLogs} phases=${phases}/>
           <div className="minis">
             <div><span className="num">${recentLifts.length}</span><small>Workouts</small></div>
             <div><span className="num">${avgMin || '—'}</span><small>Avg minutes</small></div>
@@ -3312,33 +3610,6 @@ function Progress({ units, week, logs, hist, planned, bw, bwGoal, onLogBw, onDel
           </div>
         </div>`}
 
-        <div className="section">
-          <div className="section-head"><h2>Weekly sets per muscle</h2><span>Shaded is your productive range</span></div>
-          <div className="panel">
-            ${VOLUME.map(r0 => ({ ...r0, v: vol[r0.m] || 0 })).map(r => html`
-              <div className="mrow" key=${r.m}>
-                <span>${r.m}${(focus || []).includes(r.m) ? html` <span className="tag">Focus</span>` : ''}</span>
-                <div className="track" aria-label=${`${r.m}: ${r.v} sets, target ${r.lo} to ${r.hi}`}>
-                  <div className="band" style=${{left:(r.lo/SCALE*100)+'%', width:((r.hi-r.lo)/SCALE*100)+'%'}}></div>
-                  <div className=${'fill' + (r.v < r.lo ? ' low' : '')} style=${{width:(Math.min(r.v, SCALE)/SCALE*100)+'%'}}></div>
-                </div>
-                <span className="num" style=${{textAlign:'right',fontSize:16}}>${r.v}</span>
-              </div>`)}
-          </div>
-        </div>
-
-        <div className="section">
-          <div className="section-head"><h2>Consistency</h2><span>${done} of ${planned * 8} sessions</span></div>
-          <div className="panel">
-            <div className="cons">
-              ${sessions.map((c, i) => html`<div className="col" key=${i}>
-                ${Array.from({ length:planned }, (_, j) => html`<span key=${j} className=${'dot' + (j < c ? ' on' : '')}></span>`)}
-                <span className="lbl">${i === 7 ? 'Now' : wkLabel(wkeys[i])}</span>
-              </div>`)}
-            </div>
-            <p className="note" style=${{marginBottom:0}}>Each column is a week, each bar a planned lifting session.</p>
-          </div>
-        </div>
       </div>`}
     </div>`;
 }
@@ -3502,13 +3773,13 @@ function Onboarding({ settings, units, lifts, bwLb, firstRun, onFinish, onClose 
 const byHeading = t => () => [...document.querySelectorAll('.section')].find(x => { const h = x.querySelector('.section-head h2'); return h && h.textContent.trim() === t; });
 const GUIDE = [
   { tab:'today', sel:'header.top', t:'Today', d:'Every day starts here: the date, today’s session, and where you are in your current block.' },
-  { tab:'today', sel:'.block-ring', opt:1, t:'Block progress', d:'Each segment is one week of your six-week block. The bright one is this week. Tap it to see the whole timeline.' },
+  { tab:'today', sel:'.blockbar', opt:1, t:'Block progress', d:'Each bar is one week of your block, colored by phase and taller as the work gets heavier. The tag marks this week. Tap it to open the whole program.' },
   { tab:'today', sel:'.loc-seg', opt:1, t:'Gym or home', d:'Training somewhere else today? Switch here and exercises and loads change to fit the equipment you have.' },
   { tab:'today', sel:'.today-actions', opt:1, t:'Move, skip, cardio or travel', d:'Busy day? Move today’s session to another day or skip it, and the week rearranges. Log cardio you did anywhere, from bike to stair stepper, or start a run, walk, hike or ride outdoors and GPS tracks distance, pace, climb and your route on a map (hikes show the climb as you go). Traveling? Pick what the hotel has and your lift days fit it until you’re home.' },
-  { tab:'today', sel:'.wkcard', opt:1, t:'This week', d:'Your week at a glance. Finished sessions fill in. Tap any day to see what’s planned.' },
+  { tab:'today', sel:'.wkcard', opt:1, t:'This week', d:'Your week at a glance, colored by workout type: blue for lifting, red for cardio, green for active rest. Done days fill in with a check, today is outlined. Tap any day to see what’s planned.' },
   { tab:'today', sel:'[data-tour="friendsweek"]', opt:1, t:'Friends this week', d:'Once you have friends, each ring fills as that person trains this week, with the week’s best moment below. Open Standings and posts to rank everyone by sessions, volume or time, or see the newest post and react. Tap a friend’s ring for their latest workout.' },
   { tab:'today', find:() => document.querySelector('.screen section.ov') || document.querySelector('.screen .hero'), opt:1, t:'Today’s session', d:'How long it takes, how many exercises and working sets, and which muscles it trains. Short on time, or have extra? Tap Adjust time, pick how long you have, and today’s session trims or adds work to fit. On days without core work, tick Add core for a few minutes of it.' },
-  { tab:'today', sel:'.flip-chip', opt:1, t:'Muscle map', d:'Tap to flip the card and see which muscles today hits, front and back, from low to very high load.' },
+  { tab:'today', sel:'.flip-chip', opt:1, t:'Muscle map', d:'Tap to flip the card. Today’s muscles are outlined, and shading shows what’s still recovering from earlier sessions. If today hits something that isn’t ready, Caliber offers to go 10% lighter.' },
   { tab:'today', find:byHeading('Exercises'), opt:1, t:'Exercises', d:'Each exercise with its sets, reps and weight. A trophy means the set you’re scheduled for would be a PR. Tap one for form cues, past performance, or to swap it.' },
   { tab:'today', sel:'.tiles', opt:1, t:'Daily check-ins', d:'Quick readiness, body weight, food and water logging. Readiness tunes today’s loads to how you slept and recovered. Connect Apple Health in the check-in to add sleep, heart rate variability and resting heart rate from Apple Watch, Oura, Whoop or another tracker.' },
   { tab:'today', sel:'.cta', opt:1, t:'Start your workout', d:'This opens the workout logger. Next, a sample workout so you can see how it works. Nothing in it is saved.' },
@@ -3535,13 +3806,15 @@ const GUIDE = [
   { tab:'program', sel:'.import', opt:1, t:'Bring your own program', d:'Already have a program? Import a spreadsheet, or let Claude read a photo, PDF or pasted text. A screenshot of a single workout, like today’s WOD, loads as a workout to do now. Imported programs stay on a week until you move to the next one: tap it on the Program tab. To keep going after one ends, tap Make it perpetual: Caliber builds never-ending six-week blocks from its days, maxes and exercises, with the goal and focus you pick.' },
   { tab:'program', sel:'[data-tour="exlib"]', opt:1, t:'Exercise library', d:'Search every exercise, from squats to sled pushes, and see how to do it: the main lifts have a video with the working muscles highlighted, the rest a moving figure. Plus what it works and what you need. Not there? Add your own exercise and ask for it to be added. When it is, Today tells you and moves your sets over to it.' },
   { tab:'program', sel:'[data-tour="wods"]', opt:1, t:'Free workouts', d:'8- and 12-week race plans for HYROX-format events, Hero workouts, benchmarks, and challenges like the 1,000 lb club. Load any workout into today and check off the sets as you go. There’s also a link to today’s workout on CrossFit.com.' },
-  { tab:'history', t:'History', d:'Every workout you’ve finished. Tap one to see each set, share it, or fix a weight or reps you got wrong with Edit workout. Totals and PRs update when you save.' },
+  { tab:'history', t:'History', d:'Every workout you’ve finished. Tap one to see each set, share it, or fix a weight or reps you got wrong with Edit workout. Calendar shows your last 16 weeks at a glance, with PR days marked.' },
   { tab:'progress', find:() => { const x = document.querySelector('[aria-label="Progress view"]'); return x && x.parentElement; }, t:'Progress', d:'Strength, body weight, food and training trends, each on its own tab.' },
   { tab:'progress', before:() => { const b = [...document.querySelectorAll('[aria-label="Progress view"] button')].find(x => x.textContent.trim() === 'Food'); b && b.click(); }, find:() => { const x = document.querySelector('[aria-label="Previous day"]'); return x && x.parentElement; }, opt:1, t:'Forgot to log a meal?', d:'On Food, the arrows step back up to two weeks so you can fill in a day you missed. It always opens on today.' },
   { tab:'progress', before:() => { const b = [...document.querySelectorAll('[aria-label="Progress view"] button')].find(x => x.textContent.trim() === 'Strength'); b && b.click(); }, sel:'[data-tour="caliber"]', opt:1, t:'Your Caliber', d:'One number for your overall strength: your best squat, bench, deadlift and press relative to body weight. It climbs as you get stronger.' },
   { tab:'progress', find:byHeading('Milestones'), opt:1, t:'Milestones', d:'Workout numbers, plate clubs, body-weight lifts, total weight lifted, streaks and the 1,000 lb club (squat, bench and deadlift in one workout). Tap one to see them all.' },
+  { tab:'progress', sel:'[data-tour="prtimeline"]', opt:1, t:'PR timeline', d:'Every PR, newest first: the set that did it and how much your estimated max went up. Filter to one of the main lifts.' },
   { tab:'progress', sel:'[data-tour="board"]', opt:1, t:'Leaderboard', d:'Opt in to see where your Caliber ranks against other lifters, split by men and women and by age bracket like a powerlifting meet. Only lifts you log in Caliber count, and it updates live.' },
-  { tab:'progress', before:() => { const b = [...document.querySelectorAll('[aria-label="Progress view"] button')].find(x => x.textContent.trim() === 'Training'); b && b.click(); }, sel:'[data-tour="recovery"]', opt:1, t:'Muscle recovery', d:'How recovered each muscle is, based on the hard sets you’ve logged. Green is ready to train hard.' },
+  { tab:'progress', before:() => { const b = [...document.querySelectorAll('[aria-label="Progress view"] button')].find(x => x.textContent.trim() === 'Training'); b && b.click(); }, sel:'[data-tour="musclesets"]', opt:1, t:'Sets per muscle', d:'Hard sets for each muscle this week: what you’ve done, and what the rest of the week’s plan adds by Sunday, against a 10–20 guide.' },
+  { tab:'progress', sel:'[data-tour="recovery"]', opt:1, t:'Muscle recovery', d:'How recovered each muscle is, on the body and as a list, from the hard sets you’ve logged. The darker the shade, the more recently it was worked; each row says when it’ll be ready.' },
   { tab:'profile', sel:'.setting.pal', opt:1, t:'Make it yours', d:'Pick a color theme like Colorado, light, dark or Auto to match your iPhone, and how the rest timer tells you time’s up: beep, chime, voice or off.' },
   { tab:'profile', find:() => [...document.querySelectorAll('.screen button.row')].find(b => b.textContent.trim().startsWith('Notifications')), opt:1, t:'Reminders', d:'A workout reminder, a morning check-in on lift days, a weekly check-in, and Rest’s up when Caliber is in the background. All off until you turn them on.' },
   { tab:'program', sel:'[data-tour="myprograms"]', opt:1, t:'My programs', d:'Every program you import, build or start is saved here. Sort them into folders, and switch back to one any time: pick up at the week you were on, or start it over.' },
@@ -4841,6 +5114,68 @@ function WeekBars({ data, labels, target }){
   </svg>`;
 }
 
+/* Calories this week: your target ±7% shaded, a dotted weekly average, bars outside the range faded,
+   and a protein row underneath (filled on days you hit the target) */
+function CalorieWeek({ days, kc, prot, target, protTarget }){
+  const [sel, setSel] = useState(null);
+  const today = localDate(), lo = Math.round(target * .93), hi = Math.round(target * 1.07);
+  const logged = days.map((d, i) => d <= today && kc[i] > 0);
+  const vals = kc.filter((v, i) => logged[i]), avg = vals.length ? Math.round(vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
+  const inBand = days.filter((d, i) => logged[i] && kc[i] >= lo && kc[i] <= hi).length;
+  const done = days.filter((d, i) => logged[i] && d < today).length || vals.length;
+  const W = 350, H = 160, pl = 38, pr = 8, pt = 10, pb = 24, sc = niceScale(0, Math.max(hi, ...vals), 0), bw = (W - pl - pr) / 7;
+  const y = v => pt + (1 - v / sc.max) * (H - pt - pb);
+  const pHit = days.filter((d, i) => logged[i] && prot[i] >= protTarget * .95).length;
+  return html`<div>
+    <div className="muted small">Average this week</div>
+    <div style=${{display:'flex',alignItems:'baseline',gap:8}}><span className="num big">${avg ? fmtNum(avg) : '—'}</span><span className="muted">of ${fmtNum(target)} kcal</span></div>
+    ${vals.length > 0 && html`<div className="chart-sub">${inBand} of ${vals.length} ${vals.length === 1 ? 'day' : 'days'} inside your range</div>`}
+    <svg viewBox=${`0 0 ${W} ${H}`} style=${{width:'100%',height:'auto',display:'block',marginTop:8,touchAction:'pan-y'}} role="img"
+      aria-label=${`Calories by day this week against a ${fmtNum(lo)} to ${fmtNum(hi)} kcal range. ${days.map((d, i) => logged[i] ? `${WEEKDAYS[i]} ${fmtNum(kc[i])}` : '').filter(Boolean).join(', ')}.`}
+      onPointerLeave=${() => setSel(null)}>
+      <rect x=${pl} y=${y(hi)} width=${W - pl - pr} height=${y(lo) - y(hi)} fill="var(--raised)"/>
+      ${sc.ticks.map(v => html`<g key=${v}><line x1=${pl} x2=${W - pr} y1=${y(v)} y2=${y(v)} stroke="var(--line)"/><text x=${pl - 6} y=${y(v) + 4} textAnchor="end" fontSize="12" fill="var(--muted)">${v >= 1000 ? `${v / 1000}k` : v}</text></g>`)}
+      ${kc.map((v, i) => { const x = pl + i * bw + 7, w = bw - 14, isT = days[i] === today, lbl = html`<text x=${x + w / 2} y=${H - 6} textAnchor="middle" fontSize="12" fontWeight=${isT ? 700 : 500} fill=${isT ? 'var(--text)' : 'var(--muted)'}>${WEEKDAYS[i].charAt(0)}</text>`;
+        if(!logged[i]) return html`<g key=${i}>${lbl}</g>`;
+        const top = y(v), r = Math.min(4, w / 2), ok = v >= lo && v <= hi;
+        return html`<g key=${i} onPointerEnter=${() => setSel(i)} onClick=${() => setSel(sel === i ? null : i)} style=${{cursor:'pointer'}}>
+          <rect x=${pl + i * bw} y=${pt} width=${bw} height=${H - pt - pb} fill="transparent"/>
+          <path d=${`M${x},${y(0)} V${top + r} Q${x},${top} ${x + r},${top} H${x + w - r} Q${x + w},${top} ${x + w},${top + r} V${y(0)} Z`}
+            fill=${ok ? 'var(--accent-fill)' : 'color-mix(in srgb,var(--accent-fill) 45%,var(--surface))'}/>${lbl}</g>`; })}
+      ${avg > 0 && html`<line x1=${pl} x2=${W - pr} y1=${y(avg)} y2=${y(avg)} stroke="var(--text)" strokeWidth="1.4" strokeDasharray="1 4" strokeLinecap="round" pointerEvents="none"/>`}
+      ${avg > 0 && html`<text x=${W - pr} y=${y(avg) - 5} textAnchor="end" fontSize="11" fill="var(--text)" pointerEvents="none">avg</text>`}
+      ${sel != null && logged[sel] && (() => { const cx = Math.min(W - pr - 46, Math.max(pl + 46, pl + sel * bw + bw / 2)), ty = Math.max(pt + 2, y(kc[sel]) - 30);
+        return html`<g pointerEvents="none"><rect x=${cx - 46} y=${ty} width="92" height="24" rx="6" fill="var(--raised)" stroke="var(--line)"/>
+          <text x=${cx} y=${ty + 16} textAnchor="middle" fontSize="12" fontWeight="600" fill="var(--text)">${fmtNum(kc[sel])} kcal</text></g>`; })()}
+    </svg>
+    <div className="prot-row"><span className="muted small">Protein</span>
+      <div>${days.map((d, i) => { const hit = logged[i] && prot[i] >= protTarget * .95;
+        return html`<span key=${d} className=${'pd' + (hit ? ' hit' : d > today ? ' due' : '')} title=${logged[i] ? `${WEEKDAYS[i]}: ${prot[i]} g` : WEEKDAYS[i]}>${WEEKDAYS[i].charAt(0)}</span>`; })}</div></div>
+    <p className="muted small" style=${{margin:'8px 0 0'}}>${vals.length ? `Hit ${protTarget} g protein on ${pHit} ${pHit === 1 ? 'day' : 'days'}. ` : ''}Shaded band: ${fmtNum(lo)}–${fmtNum(hi)} kcal, your target ±7%.</p>
+  </div>`;
+}
+/* Caffeine by day, split at 2 PM: what you had before, and after (the part most likely to cost sleep) */
+function CaffeineWeek({ week }){
+  const today = localDate(), k = weekKey();
+  const W = 350, H = 130, pl = 38, pr = 8, pt = 8, pb = 22, tot = week.map(([a, b]) => a + b);
+  const sc = niceScale(0, Math.max(CAFF_LIMIT * 1.1, ...tot), 0), bw = (W - pl - pr) / 7, y = v => pt + (1 - v / sc.max) * (H - pt - pb);
+  const late = week.reduce((a, [, b]) => a + b, 0), lateDays = week.filter(([, b]) => b > 0).length;
+  return html`<div style=${{marginTop:14}}>
+    <div className="chart-head"><span className="opt-label" style=${{margin:0}}>This week, mg</span><span className="muted small">limit ${CAFF_LIMIT} mg</span></div>
+    <svg viewBox=${`0 0 ${W} ${H}`} style=${{width:'100%',height:'auto',display:'block',marginTop:4}} role="img"
+      aria-label=${`Caffeine by day this week, before and after 2 PM. ${week.map(([a, b], i) => a + b ? `${WEEKDAYS[i]} ${a} mg before, ${b} after` : '').filter(Boolean).join('; ')}.`}>
+      <line x1=${pl} x2=${W - pr} y1=${y(0)} y2=${y(0)} stroke="var(--line)"/>
+      ${week.map(([a, b], i) => { const x = pl + i * bw + 8, w = bw - 16, d = addDays(k, i), isT = d === today, r = 3;
+        const seg = (from, to, fill) => to - from > 0 ? html`<rect x=${x} y=${y(to)} width=${w} height=${Math.max(1, y(from) - y(to) - (from > 0 ? 2 : 0))} rx=${r} fill=${fill}/>` : null;
+        return html`<g key=${i}>${seg(0, a, 'var(--accent-fill)')}${seg(a, a + b, 'color-mix(in srgb,var(--accent-fill) 45%,var(--surface))')}
+          <text x=${x + w / 2} y=${H - 6} textAnchor="middle" fontSize="12" fontWeight=${isT ? 700 : 500} fill=${isT ? 'var(--text)' : 'var(--muted)'}>${WEEKDAYS[i].charAt(0)}</text></g>`; })}
+      <line x1=${pl} x2=${W - pr} y1=${y(CAFF_LIMIT)} y2=${y(CAFF_LIMIT)} stroke="var(--text)" strokeWidth="1.4" strokeDasharray="1 4" strokeLinecap="round"/>
+      <text x=${pl - 6} y=${y(CAFF_LIMIT) + 4} textAnchor="end" fontSize="12" fill="var(--muted)">${CAFF_LIMIT}</text>
+    </svg>
+    <div className="chart-legend"><span><i className="msk" style=${{background:'var(--accent-fill)'}}></i>Before 2 PM</span><span><i className="msk" style=${{background:'color-mix(in srgb,var(--accent-fill) 45%,var(--surface))'}}></i>After 2 PM</span></div>
+    ${late > 0 && html`<p className="muted small" style=${{margin:'6px 0 0'}}>${late} mg after 2 PM on ${lateDays} ${lateDays === 1 ? 'day' : 'days'} this week. Earlier cups are easier on sleep.</p>`}
+  </div>`;
+}
 function FoodSection({ caff, nut, targets, todayT, food, units, onAdd, onDelete, onSetup, onRecalc, onLogBw, onCopyMeal, onNut, water, onWater, waterGoal, fasting, onFastStart, onFastEnd, onFastProtocol }){
   // The day shown: today, or one of the last two weeks to fill in a day you missed
   const [day, setDay] = useState(localDate());
@@ -4911,8 +5246,8 @@ function FoodSection({ caff, nut, targets, todayT, food, units, onAdd, onDelete,
     </div>
     ${isToday && trackers}
     ${targets && html`<div className="section">
-      <div className="section-head"><h2>This week</h2><span>${avgK ? `Averaging ${fmtNum(avgK)} kcal, ${avgP} g protein` : 'Log a few days to see averages'}</span></div>
-      <div className="panel"><${WeekBars} data=${kc} labels=${WEEKDAYS.map(d => d.charAt(0))} target=${targets.kcal}/></div>
+      <div className="section-head"><h2>This week</h2><span>${avgP ? `${avgP} g protein a day` : 'Log a few days to see averages'}</span></div>
+      <div className="panel"><${CalorieWeek} days=${days} kc=${kc} prot=${days.map(d => Math.round(sumFood(food[d]).p))} target=${targets.kcal} protTarget=${targets.protein}/></div>
     </div>`}
     ${targets && html`<${NutritionInsights} food=${food} targets=${targets}/>`}
     ${targets && html`<div className="section">
@@ -5044,8 +5379,7 @@ function CaffeineCard({ today, recent2d, week, recentItems, widget, onOpen, onQu
     ${widget && html`<div className="setting" style=${{padding:'10px 2px 0'}}>
       <span className="muted small">Widget button: ${widget.item.label}, ${widget.item.mg} mg${widget.picked ? '' : ' (your last drink)'}</span>
       <button className="link" onClick=${onWidget}>Change</button></div>`}
-    ${week.some(v => v > 0) && html`<div style=${{marginTop:14}}><p className="opt-label" style=${{margin:'0 2px 6px'}}>This week, mg</p>
-      <${WeekBars} data=${week} labels=${WEEKDAYS.map(d => d.charAt(0))} target=${CAFF_LIMIT}/></div>`}
+    ${week.some(([a, b]) => a + b > 0) && html`<${CaffeineWeek} week=${week}/>`}
   </section>`;
 }
 // widget: { pick, recent } turns this into the picker for the widgets' caffeine button (onWidget gets the drink, or null for your last one)
@@ -5453,30 +5787,26 @@ function BodyWeightRow({ entries, units, onLog }){
   </button>`;
 }
 
-function BWChart({ points, units, goal }){
-  const W = 340, H = 180, pl = 38, pr = 10, pt = 12, pb = 24;
-  const first = points[0].date, span = Math.max(1, dayDiff(first, points[points.length - 1].date));
-  const vals = points.flatMap(p => [p.w, p.t]).concat(goal ? [goal] : []).map(v => units === 'kg' ? v * KG : v);
-  const lo = Math.min(...vals), hi = Math.max(...vals), pad = Math.max(.5, (hi - lo) * .12), min = lo - pad, max = hi + pad;
-  const x = d => pl + dayDiff(first, d) / span * (W - pl - pr);
-  const y = v => pt + (1 - ((units === 'kg' ? v * KG : v) - min) / (max - min)) * (H - pt - pb);
-  const line = points.map((p, i) => `${i ? 'L' : 'M'}${x(p.date).toFixed(1)},${y(p.t).toFixed(1)}`).join(' ');
-  const fd = d => new Date(d + 'T12:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' });
-  return html`<svg viewBox=${`0 0 ${W} ${H}`} style=${{width:'100%',height:'auto',display:'block',marginTop:10}} role="img" aria-label="Body weight and trend">
-    ${[hi, lo].map((v, i) => html`<g key=${i}>
-      <line x1=${pl} x2=${W - pr} y1=${pt + (1 - (v - min) / (max - min)) * (H - pt - pb)} y2=${pt + (1 - (v - min) / (max - min)) * (H - pt - pb)} stroke="var(--line)" strokeDasharray="3 4"/>
-      <text x=${pl - 6} y=${pt + (1 - (v - min) / (max - min)) * (H - pt - pb) + 4} textAnchor="end" fontSize="11" fill="var(--faint)">${v.toFixed(1)}</text></g>`)}
-    ${goal && html`<g><line x1=${pl} x2=${W - pr} y1=${y(goal)} y2=${y(goal)} stroke="var(--p-green)" strokeWidth="1.5" strokeDasharray="6 4"/>
-      <text x=${W - pr} y=${y(goal) - 5} textAnchor="end" fontSize="11" fill="var(--p-green)">Goal</text></g>`}
-    ${points.map((p, i) => html`<circle key=${i} cx=${x(p.date)} cy=${y(p.w)} r="2.6" fill="var(--faint)" opacity=".7"/>`)}
-    <path d=${line} fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round"/>
-    <circle cx=${x(points[points.length - 1].date)} cy=${y(points[points.length - 1].t)} r="5" fill="var(--accent)"/>
-    <text x=${pl} y=${H - 6} fontSize="11" fill="var(--faint)">${fd(first)}</text>
-    <text x=${W - pr} y=${H - 6} textAnchor="end" fontSize="11" fill="var(--faint)">${fd(points[points.length - 1].date)}</text>
+
+function WeeklyChange({ weeks, pace, onPace, units }){
+  const W = 350, H = 130, pl = 34, pr = 8, pt = 8, pb = 22;
+  const vals = weeks.filter(v => v != null).concat(pace != null ? [pace] : []), m = Math.max(.5, ...vals.map(Math.abs)) * 1.15;
+  const step = m > 2 ? 1 : m > 1 ? .5 : .25, top = Math.ceil(m / step) * step;
+  const y = v => pt + (1 - (v + top) / (2 * top)) * (H - pt - pb), bw = (W - pl - pr) / weeks.length;
+  const bar = (v, i) => { const x = pl + i * bw + 2, w = bw - 4, y0 = y(0), y1 = y(v), r = Math.min(3, w / 2, Math.abs(y1 - y0)), up = v > 0;
+    return up ? `M${x},${y0} V${y1 + r} Q${x},${y1} ${x + r},${y1} H${x + w - r} Q${x + w},${y1} ${x + w},${y1 + r} V${y0} Z`
+      : `M${x},${y0} V${y1 - r} Q${x},${y1} ${x + r},${y1} H${x + w - r} Q${x + w},${y1} ${x + w},${y1 - r} V${y0} Z`; };
+  return html`<svg viewBox=${`0 0 ${W} ${H}`} style=${{width:'100%',height:'auto',display:'block',marginTop:6}} role="img" aria-label="Change in trend weight each week, last 12 weeks">
+    ${[top, 0, -top].map(v => html`<g key=${v}><line x1=${pl} x2=${W - pr} y1=${y(v)} y2=${y(v)} stroke="var(--line)"/>
+      <text x=${pl - 6} y=${y(v) + 4} textAnchor="end" fontSize="12" fill="var(--muted)">${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v)}</text></g>`)}
+    ${pace != null && html`<line x1=${pl} x2=${W - pr} y1=${y(pace)} y2=${y(pace)} stroke="var(--text)" strokeWidth="1.2" strokeDasharray="1 4" strokeLinecap="round"/>`}
+    ${weeks.map((v, i) => v == null || Math.abs(v) < .01 ? null : html`<path key=${i} d=${bar(v, i)} fill=${pace == null || onPace(v) ? 'var(--accent-fill)' : 'color-mix(in srgb,var(--accent-fill) 38%,var(--surface))'}/>`)}
+    <text x=${pl} y=${H - 5} fontSize="12" fill="var(--muted)">12 weeks ago</text>
+    <text x=${W - pr} y=${H - 5} textAnchor="end" fontSize="12" fill="var(--muted)">This week</text>
   </svg>`;
 }
-
-function BodySection({ entries, units, goal, onLog, onDelete }){
+function BodySection({ entries, units, goal, onLog, onDelete, pace }){
+  const [range, setRange] = useRange('body', 120);
   if(!entries.length) return html`<div className="panel empty" style=${{marginTop:14}}>
     <div className="ic"><${Icon} name="scale"/></div>
     <div style=${{fontWeight:700,fontSize:18}}>No weigh-ins yet</div>
@@ -5488,23 +5818,48 @@ function BodySection({ entries, units, goal, onLog, onDelete }){
   const now = pts[pts.length - 1].t;
   const d7 = trendOn(pts, addDays(today, -7)), d30 = trendOn(pts, addDays(today, -30)), d28 = trendOn(pts, addDays(today, -28));
   const ch = v => v == null ? '—' : `${v >= 0 ? '+' : ''}${(units === 'kg' ? v * KG : v).toFixed(1)}`;
-  const recent = pts.filter(p => dayDiff(p.date, today) <= 90);
-  const show = recent.length >= 2 ? recent : pts;
+  const inR = pts.filter(p => inRange(p.date, range));
+  const show = inR.length >= 2 ? inR : pts.slice(-2);
+  const u = v => units === 'kg' ? v * KG : v;
   const toGo = goal ? goal - now : null;
+  // where the trend is heading: the last four weeks' pace, carried to the goal if it's moving that way
+  const perDay = d28 != null ? (now - d28) / 28 : null;
+  const etaDays = goal && perDay && Math.abs(toGo) >= .25 && Math.sign(perDay) === Math.sign(toGo) ? Math.round(toGo / perDay) : null;
+  const eta = etaDays && etaDays > 0 && etaDays < 365 ? addDays(today, etaDays) : null;
+  const moved = now - show[0].t;
+  const sentence = `${Math.abs(moved) < .25 ? 'Steady' : `${moved < 0 ? 'Down' : 'Up'} ${fmtW(Math.abs(moved), units)} ${units}`} since ${shortDate(show[0].date)}${
+    toGo != null && Math.abs(toGo) < .25 ? ' · at your goal' : eta ? ` · on pace for ${fmtW(goal, units)} around ${shortDate(eta)}` : toGo != null ? ` · ${fmtW(Math.abs(toGo), units)} ${units} to go` : ''}`;
+  // change in the trend each week, last 12 weeks
+  const wks = Array.from({ length:12 }, (_, i) => weekKeyOffset(i - 11));
+  const weekly = wks.map(k => { const a = trendOn(pts, addDays(k, -1)), b = trendOn(pts, addDays(k, 6) > today ? today : addDays(k, 6)); return a == null || b == null ? null : u(b - a); });
+  const onPace = v => pace != null && v != null && Math.abs(v - u(pace)) <= Math.max(Math.abs(u(pace)) * .5, units === 'kg' ? .1 : .25);
+  const counted = weekly.filter(v => v != null);
   return html`<div>
     <section className="panel" style=${{marginTop:14}}>
-      <div className="muted small">Trend weight</div>
-      <div style=${{display:'flex',alignItems:'baseline',gap:12,flexWrap:'wrap'}}>
-        <span className="num big">${fmtW(now, units)}<span className="muted" style=${{fontSize:20,fontWeight:600,marginLeft:4,fontStretch:'100%'}}>${units}</span></span>
-        ${toGo != null && html`<span className="delta" style=${{color:'var(--muted)'}}>${Math.abs(toGo) < .25 ? 'At your goal' : `${fmtW(Math.abs(toGo), units)} ${units} to ${toGo < 0 ? 'lose' : 'gain'}`}</span>`}
-      </div>
-      ${show.length >= 2 ? html`<${BWChart} points=${show} units=${units} goal=${goal}/>` : html`<p className="note">Log one more weigh-in to draw your trend.</p>`}
+      <div className="chart-head"><div className="muted small">Trend weight</div><${RangeSeg} value=${range} onChange=${setRange}/></div>
+      <span className="num big">${fmtW(now, units)}<span className="muted" style=${{fontSize:20,fontWeight:600,marginLeft:4,fontStretch:'100%'}}>${units}</span></span>
+      <div className="chart-sub">${sentence}</div>
+      ${show.length >= 2 ? html`<${TimeChart} points=${show.map(p => ({ d:p.date, v:u(p.w), tip:[shortDate(p.date), `${fmtW(p.w, units)} ${units} on the scale`, `Trend ${fmtW(p.t, units)} ${units}`] }))}
+          trend=${show.map(p => ({ d:p.date, v:u(p.t) }))} goal=${goal ? { v:u(goal), label:`Goal ${fmtW(goal, units)}` } : null}
+          proj=${eta ? [{ d:show[show.length - 1].date, v:u(now) }, { d:eta, v:u(goal) }] : null} minSpan=${units === 'kg' ? 4 : 10}
+          fmtV=${v => (Math.round(v * 10) / 10).toString()} label=${`Body weight trend, ${fmtW(now, units)} ${units} now. ${sentence}.`}/>
+        <div className="chart-legend">
+          <span><i style=${{width:7,height:7,borderRadius:'50%',background:'color-mix(in srgb,var(--text) 42%,var(--surface))'}}></i>Scale reading</span>
+          <span><i style=${{width:16,height:3,borderRadius:2,background:'var(--accent-fill)'}}></i>Trend</span>
+          ${eta && html`<span><i style=${{width:16,borderTop:'2px dashed var(--accent-fill)'}}></i>At this pace</span>`}
+        </div>` : html`<p className="note">Log one more weigh-in to draw your trend.</p>`}
       <div className="minis">
         <div><span className="num">${ch(d7 == null ? null : now - d7)}</span><small>7 days</small></div>
         <div><span className="num">${ch(d30 == null ? null : now - d30)}</span><small>30 days</small></div>
         <div><span className="num">${ch(d28 == null ? null : (now - d28) / 4)}</span><small>${units}/week</small></div>
       </div>
     </section>
+    ${counted.length >= 2 && html`<section className="panel" style=${{marginTop:14}}>
+      <div className="chart-head"><span style=${{fontWeight:700,fontSize:15}}>Weekly change</span>
+        <span className="muted small">${pace != null ? `Target ${pace < 0 ? '−' : '+'}${rateLabel(Math.abs(pace), units)} a week` : 'Last 12 weeks'}</span></div>
+      <${WeeklyChange} weeks=${weekly} pace=${pace != null ? u(pace) : null} onPace=${onPace} units=${units}/>
+      <p className="muted small" style=${{margin:'6px 0 0'}}>${pace != null ? `${counted.filter(onPace).length} of ${counted.length} weeks near your target pace. Faded bars are off it.` : 'Set a nutrition goal to see your target pace here.'}</p>
+    </section>`}
     <button className="btn primary block" style=${{marginTop:14}} onClick=${onLog}><${Icon} name="scale"/> Log body weight</button>
     <div className="section">
       <div className="section-head"><h2>Weigh-ins</h2><span>Dots on the chart</span></div>
@@ -5522,6 +5877,70 @@ function BodySection({ entries, units, goal, onLog, onDelete }){
 
 /* ---------- Calendar ---------- */
 const KIND_COLOR = { lift:'var(--p-blue)', cardio:'var(--p-red)', active:'var(--p-green)', wod:'var(--accent)' };
+/* Training calendar: the last 16 weeks, a row per week. Shade is the day's hard sets (cardio and active days
+   are the lightest step); a dot marks a PR; an outline marks a planned workout that didn't happen */
+function TrainingHeatmap({ logs, plannedFor, onDay }){
+  const today = localDate(), N = 16, starts = Array.from({ length:N }, (_, i) => weekKeyOffset(i - N + 1));
+  const byDate = {}; logs.forEach(l => (byDate[l.date] = byDate[l.date] || []).push(l));
+  const setsOn = d => (byDate[d] || []).reduce((a, l) => a + (l.ex || []).reduce((b, e) => b + (e.sets || []).filter(x => isWorkType(x.type)).length, 0), 0);
+  const perWeek = starts.map(k => Array.from({ length:7 }, (_, i) => addDays(k, i)).filter(d => (byDate[d] || []).some(l => l.kind === 'lift')).length);
+  const planned = Array.from({ length:7 }, (_, i) => plannedFor(addDays(weekKey(), i))).filter(p => p && p.type === 'lift').length;
+  const counts = starts.flatMap(k => Array.from({ length:7 }, (_, i) => setsOn(addDays(k, i)))).filter(n => n > 0).sort((a, b) => a - b);
+  const q = f => counts.length ? counts[Math.min(counts.length - 1, Math.floor(counts.length * f))] : 0, t1 = q(1 / 3), t2 = q(2 / 3);
+  const STEP = ['color-mix(in srgb,var(--accent-fill) 22%,var(--surface))', 'color-mix(in srgb,var(--accent-fill) 45%,var(--surface))', 'color-mix(in srgb,var(--accent-fill) 70%,var(--surface))', 'var(--accent-fill)'];
+  let run = 0, best = 0; perWeek.slice(0, -1).forEach(n => { run = planned && n >= planned ? run + 1 : 0; best = Math.max(best, run); });
+  const sessions = perWeek.reduce((a, b) => a + b, 0), prDays = starts.flatMap(k => Array.from({ length:7 }, (_, i) => addDays(k, i))).filter(d => (byDate[d] || []).some(l => (l.prs || []).length)).length;
+  const MONTH = (k, i) => { const m = new Date(k + 'T12:00:00').toLocaleDateString('en-US', { month:'short' }); return i === 0 || m !== new Date(starts[i - 1] + 'T12:00:00').toLocaleDateString('en-US', { month:'short' }) ? m : ''; };
+  return html`<div className="panel" style=${{marginBottom:16}} data-tour="trainingcal">
+    <div className="chart-head"><span style=${{fontWeight:700,fontSize:15}}>Last 16 weeks</span><span className="muted small">${sessions} lift ${sessions === 1 ? 'session' : 'sessions'}</span></div>
+    <div className="hm-stats"><div><b className="num">${sessions}</b><small>lift sessions</small></div><div><b className="num">${best} wk</b><small>longest run on plan</small></div><div><b className="num">${prDays}</b><small>PR days</small></div></div>
+    <div className="hm" role="grid" aria-label="Training calendar for the last 16 weeks">
+      <span></span>${WEEKDAYS.map((d, i) => html`<span key=${'h' + i} className="hm-h">${d.charAt(0)}</span>`)}
+      ${starts.map((k, wi) => html`<${Fragment} key=${k}><span className="hm-m">${MONTH(k, wi)}</span>
+        ${Array.from({ length:7 }, (_, i) => { const d = addDays(k, i), ls = byDate[d] || [], n = setsOn(d), future = d > today;
+          const lift = ls.some(l => l.kind === 'lift' || l.kind === 'wod'), other = !lift && ls.length > 0, pr = ls.some(l => (l.prs || []).length);
+          const plan = !ls.length && (future || wi === N - 1 || perWeek[wi] < planned) ? plannedFor(d) : null, planLift = plan && plan.type === 'lift' && !plan.skipped;
+          const ahead = !ls.length && d >= today;
+          const cls = 'hm-d' + (ahead ? planLift ? ' hm-due' : future ? ' hm-none' : ' hm-off' : !ls.length ? planLift ? ' hm-miss' : ' hm-off' : '') + (d === today ? ' hm-now' : '');
+          const bg = lift ? STEP[n >= t2 && t2 > 0 ? 3 : n >= t1 && t1 > 0 ? 2 : 1] : other ? STEP[0] : null;
+          const label = `${new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday:'long', month:'short', day:'numeric' })}: ${ls.length ? `${ls.map(l => l.name || l.kind).join(', ')}${n ? `, ${n} hard sets` : ''}${pr ? ', PR' : ''}` : planLift ? (future ? `planned ${plan.label}` : `missed ${plan.label}`) : 'rest'}`;
+          return html`<button key=${d} className=${cls} style=${bg ? { background:bg } : null} aria-label=${label} disabled=${future && !planLift} onClick=${() => onDay(d)}>${pr && html`<i></i>`}</button>`; })}
+      </${Fragment}>`)}
+    </div>
+    <div className="chart-legend" style=${{alignItems:'center'}}><span>Fewer sets</span>${STEP.map((c, i) => html`<i key=${i} className="msk" style=${{background:c,width:16,height:12}}></i>`)}<span>More</span>
+      <span><i className="hm-key-pr"></i>PR</span><span><i className="msk hm-key-miss"></i>Planned, missed</span></div>
+    <p className="muted small" style=${{margin:'6px 0 0'}}>Tap a day to open it. Shade is hard sets compared with your own sessions; cardio and active days are the lightest.</p>
+  </div>`;
+}
+/* PR timeline: every estimated-max PR, newest first, grouped by month; the four main lifts are filled dots */
+function PrTimeline({ logs, units }){
+  const MAIN = { bench:'Bench', backsquat:'Squat', deadlift:'Deadlift', ohp:'Press' };
+  const [f, setF] = useState('all'), [all, setAll] = useState(false);
+  const items = logs.filter(l => l.prs && l.prs.length).sort((a, b) => b.start - a.start).flatMap(l => l.prs.map(pr => {
+    const e = (l.ex || []).find(x => x.key === pr.key || x.n === pr.n), top = e ? (e.sets || []).filter(x => isWorkType(x.type)).reduce((m, x) => setE1rm(x, e.trir) > setE1rm(m, e.trir) ? x : m, { w:0, r:0 }) : null;
+    return { ...pr, date:l.date, top:top && top.r ? top : null, main:!!MAIN[pr.key] }; }));
+  if(!items.length) return null;
+  const chips = Object.keys(MAIN).filter(k => items.some(x => x.key === k));
+  const shown = items.filter(x => f === 'all' || x.key === f), list = all ? shown : shown.slice(0, 8);
+  const days = new Set(items.map(x => x.date)).size, since = new Date(items[items.length - 1].date + 'T12:00:00').toLocaleDateString('en-US', { month:'long' });
+  let last = '';
+  return html`<div className="section" data-tour="prtimeline">
+    <div className="section-head"><h2>PR timeline</h2><span>${items.length} since ${since}, on ${days} ${days === 1 ? 'day' : 'days'}</span></div>
+    ${chips.length > 0 && html`<div className="chips" style=${{marginBottom:10}}>
+      <button className="pick" aria-pressed=${f === 'all'} onClick=${() => setF('all')}>All lifts</button>
+      ${chips.map(k => html`<button key=${k} className="pick" aria-pressed=${f === k} onClick=${() => setF(k)}>${MAIN[k]}</button>`)}</div>`}
+    <div className="panel prt">${list.map((x, i) => { const m = new Date(x.date + 'T12:00:00').toLocaleDateString('en-US', { month:'long' }), head = m !== last; last = m;
+      return html`<${Fragment} key=${i}>${head && html`<div className="prt-m">${m}</div>`}
+        <div className="prt-r"><span className="prt-rail"><i className=${x.main ? 'main' : ''}></i></span>
+          <span className="row-main"><span className="row-title" style=${{display:'block'}}>${x.n}</span>
+            <span className="row-sub">${shortDate(x.date)}${x.top ? ` · ${x.top.w > 0 ? toUnit(x.top.w, units) : 'BW'} × ${x.top.r}${x.top.rir != null ? ` at ${eff(x.top.rir)}` : ''}` : ''}</span></span>
+          <span style=${{textAlign:'right'}}><span className="num" style=${{display:'block',fontSize:18}}>${toUnit(x.e1rm, units)}</span>
+            <span className="muted small">${x.prev ? `+${Math.round(toUnit(x.e1rm - x.prev, units) * 10) / 10} ${units}` : 'new best'}</span></span></div></${Fragment}>`; })}
+      ${shown.length > 8 && html`<button className="link" style=${{marginTop:8}} onClick=${() => setAll(!all)}>${all ? 'Show fewer' : `Show all ${shown.length}`}</button>`}
+    </div>
+    <p className="muted small" style=${{margin:'8px 4px 0'}}>Estimated max from the set, in ${units}, and how much it went up. The four main lifts are filled dots.</p>
+  </div>`;
+}
 function CalendarView({ logs, bw, plannedFor, month, setMonth, onDay }){
   const [y, m] = month.split('-').map(Number);
   const first = new Date(y, m - 1, 1), daysIn = new Date(y, m, 0).getDate(), offset = WEEK_SUN ? first.getDay() : (first.getDay() + 6) % 7;
@@ -5638,8 +6057,9 @@ function buildHistory(logs){
     const b = bestE1rm(work, e.trir);
     const h = by[e.key] || (by[e.key] = { n:(e.id && LIB_BY_ID[e.id] && e.n === e.id ? LIB_BY_ID[e.id].n : e.n), best:0, recent:null, series:[], repBest:{} });
     h.n = e.n; h.recent = { date:l.date, sets:work, e1rm:b }; h.best = Math.max(h.best, b);
+    const top = work.reduce((m, x) => setE1rm(x, e.trir) > setE1rm(m, e.trir) ? x : m, work[0]);
     work.forEach(x => { if(x.w > 0 && !x.band) h.repBest[x.r] = Math.max(h.repBest[x.r] || 0, x.w); });
-    if(b > 0) h.series.push({ date:l.date, e1rm:b });
+    if(b > 0) h.series.push({ date:l.date, e1rm:b, top:{ w:top.w, r:top.r, rir:top.rir == null ? e.trir : top.rir, band:top.band || null } });
   }));
   return by;
 }
@@ -7945,18 +8365,29 @@ const CALIBER_LEVEL_NOTES = ['Learning the lifts', 'A few months of steady train
   'Years of focused training', 'Competitive strength', 'National or international level'];
 function RecoveryPanel({ logs }){
   const rows = muscleRecovery(logs), any = rows.some(r => r.trained);
-  const col = p => p >= 85 ? 'var(--green, #2FA36B)' : p >= 50 ? '#EDB935' : '#E04848';
+  const fills = Object.fromEntries(rows.map(r => [r.m, REC_FILL[REC_STEP(r.pct)]]));
+  const ready = rows.filter(r => r.pct >= 85), not = rows.filter(r => r.pct < 85).sort((a, b) => a.pct - b.pct);
+  const longest = not.slice().sort((a, b) => b.readyIn - a.readyIn)[0];
+  const fig = view => html`<figure><${BodyFigure} view=${view} load=${{}} fills=${fills}
+      label=${`${view === 'front' ? 'Front' : 'Back'} of the body, shaded by recovery. ${not.map(r => `${r.m} ${r.pct}%`).join(', ') || 'Everything recovered'}.`}/>
+    <figcaption>${view === 'front' ? 'Front' : 'Back'}</figcaption></figure>`;
   return html`<div className="section" data-tour="recovery">
     <div className="section-head"><h2>Muscle recovery</h2><span>From your last 4 days</span></div>
-    <div className="panel">
-      ${!any ? html`<p className="muted" style=${{margin:0}}>All muscles fresh. Nothing logged in the last four days.</p>`
-        : rows.slice().sort((a, b) => a.pct - b.pct).map(r => html`<div className="mrow" key=${r.m}>
-          <span>${r.m}</span>
-          <div className="track" aria-label=${`${r.m}: ${r.pct}% recovered`}><div className="fill" style=${{width:r.pct + '%',background:col(r.pct)}}></div></div>
-          <span className="num" style=${{textAlign:'right',fontSize:15}}>${r.pct}%</span>
-        </div>`)}
-      ${any && (() => { const next = rows.filter(r => r.pct < 85).sort((a, b) => b.readyIn - a.readyIn)[0];
-        return html`<p className="muted small" style=${{margin:'10px 0 0'}}>${next ? `${next.m} should be ready in about ${next.readyIn} h.` : 'Everything is ready to train hard.'} Estimated from the hard sets you logged; how you feel counts too.</p>`; })()}
+    <div className="panel rec-map">
+      ${!any ? html`<p className="muted" style=${{margin:0}}>All muscles fresh. Nothing logged in the last four days.</p>` : html`<div>
+        <div style=${{display:'flex',alignItems:'baseline',gap:10}}><span className="num" style=${{fontSize:44,lineHeight:1}}>${ready.length}</span><span className="muted">of ${rows.length} muscle groups ready</span></div>
+        <div className="chart-sub">${longest ? `${longest.m} ${/s$/.test(longest.m) ? 'need' : 'needs'} the longest: ready in about ${longest.readyIn} h.` : 'Everything is ready to train hard.'}</div>
+        <div className="rec-figs">${fig('front')}${fig('back')}</div>
+        <div className="rec-legend">${REC_FILL.map((f, i) => html`<span key=${i}><i style=${{ background:f }}></i>${REC_LABEL[i]}</span>`)}</div>
+        ${not.length > 0 && html`<div style=${{marginTop:8}}>${not.map(r => html`<div className="rec-row" key=${r.m}>
+          <span className="sw" style=${{ background:REC_FILL[REC_STEP(r.pct)] }}></span>
+          <span style=${{fontWeight:600}}>${r.m}</span>
+          <span className="bar" aria-hidden="true"><i style=${{ width:r.pct + '%' }}></i></span>
+          <span className="v"><b>${r.pct}%</b><small>${r.readyIn ? `ready in ${r.readyIn} h` : 'ready'}</small></span>
+        </div>`)}</div>`}
+        ${ready.length > 0 && html`<p className="muted small" style=${{margin:'10px 0 0'}}>Ready to train hard: ${ready.map(r => r.m).join(', ')}</p>`}
+      </div>`}
+      <p className="muted small" style=${{margin:'10px 0 0'}}>Estimated from the hard sets you logged. How you feel matters more.</p>
     </div>
   </div>`;
 }
@@ -8424,13 +8855,14 @@ function Radar({ a, b }){
     ${RADAR_AXES.map(([l], i) => { const [x, y] = pt(i, 1.22); return html`<text key=${'l' + i} x=${x} y=${y + 4} textAnchor="middle" fontSize="13" fill="var(--muted)">${l}</text>`; })}
   </svg>`;
 }
-function PairBars({ label, mine, theirs, fmt, me, them }){
-  const mx = Math.max(mine || 0, theirs || 0, 1);
-  const diff = theirs > 0 ? Math.round(((mine || 0) - theirs) / theirs * 100) : null;
-  return html`<div className="pb">
-    <div className="pb-h"><span>${label}</span>${diff != null && diff !== 0 && html`<span className=${diff > 0 ? 'up' : 'down'}>${diff > 0 ? '↑' : '↓'} ${Math.abs(diff)}%</span>`}</div>
-    <div className="pb-r"><${Avatar} person=${me} size=${26}/><div className="bar"><i style=${{width:`${(mine || 0) / mx * 100}%`,background:'var(--accent)'}}></i></div><span className="num">${fmt(mine || 0)}</span></div>
-    <div className="pb-r"><${Avatar} person=${them} size=${26}/><div className="bar"><i style=${{width:`${(theirs || 0) / mx * 100}%`,background:'var(--muted)'}}></i></div><span className="num">${fmt(theirs || 0)}</span></div>
+/* One head-to-head row: you on the left, your friend on the right, bars growing out from the middle;
+   the bigger number is bold */
+function Duel({ label, mine, theirs, fmt }){
+  const m = mine || 0, t = theirs || 0, mx = Math.max(m, t, 1), has = theirs != null;
+  return html`<div className="duel" role="group" aria-label=${`${label}: you ${fmt(m)}, them ${has ? fmt(t) : 'not shared'}`}>
+    <div className="duel-h"><span className=${'num' + (m > t ? ' win' : '')}>${fmt(m)}</span><span className="lbl">${label}</span>
+      <span className=${'num' + (has && t > m ? ' win' : '')} style=${{textAlign:'right'}}>${has ? fmt(t) : '—'}</span></div>
+    <div className="duel-b"><span><i className="me" style=${{width:`${m / mx * 100}%`}}></i></span><span><i style=${{width:`${has ? t / mx * 100 : 0}%`}}></i></span></div>
   </div>`;
 }
 function CompareSheet({ mine, theirs, me, them, units, onClose }){
@@ -8447,11 +8879,14 @@ function CompareSheet({ mine, theirs, me, them, units, onClose }){
   const u = v => `${fmtNum(Math.round(toUnit(v, units)))} ${units}`, hrs = m => m >= 60 ? `${Math.round(m / 6) / 10} h` : `${m} min`;
   const updated = theirs.updated ? new Date(theirs.updated).toLocaleDateString('en-US', { month:'short', day:'numeric' }) : null;
   const tm = periodMuscle(theirs, pd);
+  // head-to-head score: each stat and each lift in common is a point to whoever's ahead
+  const pairs = [...(ts ? [[ms.n, ts.n], [ms.min, ts.min], [ms.vol, ts.vol]] : []), ...common.map(c => [c.a.e1rm, c.b.e1rm])];
+  const score = { me:pairs.filter(([a, b]) => a > b).length, them:pairs.filter(([a, b]) => b > a).length, n:pairs.length };
   return html`<${Sheet} title="Comparison" sub=${updated ? `${them.label}’s stats updated ${updated}` : null} onClose=${onClose}>
     <div style=${{marginBottom:16}}><${Seg} wide label="Time range" value=${pd} onChange=${setPd} options=${PERIODS.map(([v, , l]) => ({ v, l }))}/></div>
     <div className="vs">
       <div className="who me"><${Avatar} person=${me} size=${76}/><span className="nm">${me.label}</span>${stronger === 'me' && html`<span className="stronger">STRONGER</span>`}</div>
-      <span className="badge">VS</span>
+      ${score.n > 0 ? html`<span className="score"><b className="num">${score.me}–${score.them}</b><small>${pLabel.toLowerCase()}</small></span>` : html`<span className="badge">VS</span>`}
       <div className="who"><${Avatar} person=${them} size=${76}/><span className="nm">${them.label}</span>${stronger === 'them' && html`<span className="stronger">STRONGER</span>`}</div>
     </div>
 
@@ -8465,9 +8900,14 @@ function CompareSheet({ mine, theirs, me, them, units, onClose }){
     </div>
 
     <div className="section-head" style=${{margin:'20px 4px 0'}}><h2>Stats</h2><span>${pLabel}</span></div>
-    <${PairBars} label="Workouts" mine=${ms.n} theirs=${ts && ts.n} fmt=${v => String(v)} me=${me} them=${them}/>
-    <${PairBars} label="Time training" mine=${ms.min} theirs=${ts && ts.min} fmt=${hrs} me=${me} them=${them}/>
-    <${PairBars} label="Volume" mine=${ms.vol} theirs=${ts && ts.vol} fmt=${v => fmtK(toUnit(v, units)) + ' ' + units} me=${me} them=${them}/>
+    <div className="panel duels">
+      <div className="duel-who"><span><${Avatar} person=${me} size=${24}/>${me.label}</span><span>${them.label}<${Avatar} person=${them} size=${24}/></span></div>
+      <${Duel} label="Workouts" mine=${ms.n} theirs=${ts && ts.n} fmt=${v => String(v)}/>
+      <${Duel} label="Time training" mine=${ms.min} theirs=${ts && ts.min} fmt=${hrs}/>
+      <${Duel} label="Volume" mine=${ms.vol} theirs=${ts && ts.vol} fmt=${v => fmtK(toUnit(v, units)) + ' ' + units}/>
+      ${common.slice(0, 4).map(c => html`<${Duel} key=${c.k} label=${c.a.n} mine=${c.a.e1rm} theirs=${c.b.e1rm} fmt=${u}/>`)}
+      ${common.length > 0 && html`<p className="muted small" style=${{margin:'8px 0 0'}}>Lifts compare estimated one-rep max. The bigger number in each row is bold.</p>`}
+    </div>
     ${pd !== '30' && html`<p className="note" style=${{margin:'0 4px'}}>${pd === 'all'
       ? `All time: ${nOf(mine.total, 'workout')} for you, ${theirs.total || 0} for ${them.label}.`
       : `Averaging ${(ms.n / (Number(pd) / 7)).toFixed(1)} workouts a week for you${ts ? ` and ${(ts.n / (Number(pd) / 7)).toFixed(1)} for ${them.label}` : ''}.`}</p>`}
@@ -8488,9 +8928,9 @@ function CompareSheet({ mine, theirs, me, them, units, onClose }){
             <${Icon} name=${open === c.k ? 'chevdown' : 'chev'} className="chev"/>
           </button>
           ${open === c.k && html`<div style=${{padding:'0 16px 8px'}}>
-            <${PairBars} label="One-rep max" mine=${c.a.e1rm} theirs=${c.b.e1rm} fmt=${u} me=${me} them=${them}/>
-            <${PairBars} label="Heaviest weight" mine=${c.a.heavy} theirs=${c.b.heavy} fmt=${u} me=${me} them=${them}/>
-            <${PairBars} label="Best set (volume)" mine=${c.a.vol} theirs=${c.b.vol} fmt=${u} me=${me} them=${them}/>
+            <${Duel} label="One-rep max" mine=${c.a.e1rm} theirs=${c.b.e1rm} fmt=${u}/>
+            <${Duel} label="Heaviest weight" mine=${c.a.heavy} theirs=${c.b.heavy} fmt=${u}/>
+            <${Duel} label="Best set (volume)" mine=${c.a.vol} theirs=${c.b.vol} fmt=${u}/>
           </div>`}
         </div>`;
       })}</div>`}
@@ -11610,7 +12050,16 @@ function App(){
   })() : null;
   const coreOn = !!(coreEx && coreToday && coreToday.dayId === todayPlanned.session.id);
   const reshaped = coreOn ? { ...todayBase, ex:[...todayBase.ex, coreEx] } : timeFit ? todayBase : null;
-  const todayWeek = reshaped ? plannedWeek.map((d, i) => i === todayIndex() ? { ...d, session:reshaped } : d) : plannedWeek;
+  // Recovery clash: today works a muscle that's under 60% recovered. Offer 10% lighter on those exercises, today only.
+  const [lightToday, setLightTodayState] = useState(() => { const c = store.get('lightToday', null); return c && c.date === localDate() ? c : null; });
+  function setLightToday(mode, dayId){ const c = mode ? { date:localDate(), dayId, mode } : null; setLightTodayState(c); store.set('lightToday', c); }
+  const preLight = reshaped || (todayPlanned && todayPlanned.type === 'lift' ? todayPlanned.session : null);
+  const clash = preLight ? (() => { const load = sessionLoad(preLight); return muscleRecovery(logs).filter(r => load[r.m] >= 2 && r.pct < 60).sort((a, b) => a.pct - b.pct); })() : [];
+  const clashSet = new Set(clash.map(r => r.m)), musc = e => (LIB_BY_ID[e.id] && LIB_BY_ID[e.id].m) || e.m || guessMuscle(e.n);
+  const lightMode = lightToday && todayPlanned && todayPlanned.session && lightToday.dayId === todayPlanned.session.id ? lightToday.mode : null;
+  const lightened = lightMode === 'lighter' && clash.length ? { ...preLight, ex:preLight.ex.map(e => clashSet.has(musc(e)) && e.w > 0 ? { ...e, w:roundFor(e, e.w * .9), lighter:true } : e) } : null;
+  const finalToday = lightened || reshaped;
+  const todayWeek = finalToday ? plannedWeek.map((d, i) => i === todayIndex() ? { ...d, session:finalToday } : d) : plannedWeek;
   const warmToday = timeFit ? timeFit.warm : warmDef, coolToday = timeFit ? timeFit.cool : coolDef;
   const workOpts = { warm:warmToday, cool:coolToday, warmFree:!!settings.warmFree, coolFree:!!settings.coolFree, equipment: traveling ? (trip.equip.includes('barbell') ? 'home' : 'db') : homeToday ? 'home' : settings.equipment,
     where: traveling ? 'travel' : both ? where : null };
@@ -12443,6 +12892,8 @@ Reply with only a JSON object and nothing else: {"label": short food name, "serv
       logs=${logs} warm=${warmToday} cool=${coolToday} budget=${timeToday && timeFit ? timeToday.min : settings.minutes}
       time=${todayPlanned && todayPlanned.type === 'lift' && todayPlanned.session && !todayLog && !workout ? { min:timeFit ? timeToday.min : null, usual:sessionMinutes(todayPlanned.session, warmDef, coolDef),
         changes:timeFit ? timeFit.changes : [], fits:!timeFit || timeFit.fits, onSet:m => setTimeToday(m, todayPlanned.session.id) } : null}
+      lighter=${clash.length && !todayLog && !workout && lightMode !== 'keep' ? { conflicts:clash.map(r => ({ m:r.m, pct:r.pct })), mode:lightMode,
+        exNames:preLight.ex.filter(e => clashSet.has(musc(e)) && e.w > 0).map(e => e.n), onSet:m => setLightToday(m, todayPlanned.session.id) } : null}
       core=${coreEx && !todayLog && !workout ? { n:coreEx.n, sets:coreEx.sets, min:Math.max(1, Math.round(coreEx.sets * (45 + restSeconds(coreEx)) / 60)), on:coreOn,
         onToggle:on => setCoreToday(on, todayPlanned.session.id) } : null}/>`,
     program: html`<${Program} week=${programWeek} libraryCount=${programs.length} usualLifts=${liftCount(schedule)} trip=${trip} units=${units} setLifts=${setLifts} openSheet=${setSheet} toast=${toast}
@@ -12456,13 +12907,15 @@ Reply with only a JSON object and nothing else: {"label": short food name, "serv
         const seen = new Set(), recentItems = all.slice().sort((a, b) => b.at - a.at).filter(e => { const k = e.label + e.serving; if(seen.has(k)) return false; seen.add(k); return true; }).slice(0, 3)
           .map(e => ({ key:e.label + e.serving, label:e.label, serving:e.serving, mg:Math.round(e.mg / (e.qty || 1)), cat:e.cat, kcal:e.kcal || 0 }));
         return { today:caff[t] || [], recent2d:[...(caff[addDays(t, -1)] || []), ...(caff[t] || [])],
-          week:Array.from({ length:7 }, (_, i) => Math.round((caff[addDays(weekKey(), i)] || []).reduce((a, e) => a + e.mg, 0))),
+          week:Array.from({ length:7 }, (_, i) => { const es = caff[addDays(weekKey(), i)] || [], late = e => new Date(e.at).getHours() >= 14;
+            return [Math.round(es.filter(e => !late(e)).reduce((a, e) => a + e.mg, 0)), Math.round(es.filter(late).reduce((a, e) => a + e.mg, 0))]; }),
           recentItems, onOpen:() => setSheet({ type:'caffeine' }),
           widget: system ? { item:widgetCaffItem(caff, settings.widgetCaff), picked:!!(settings.widgetCaff && settings.widgetCaff.label) } : null,
           onWidget:() => setSheet({ type:'caffeine', widget:true, recent:recentItems }),
           onQuick:r => addCaffeine({ ...r, qty:1, at:Date.now() }, nut && r.kcal > 5 ? r.kcal : 0),
           onDelete:id => { saveCaff({ ...caff, [t]:(caff[t] || []).filter(e => e.id !== id) }); toast('Removed.'); } };
       })()} units=${units} week=${week} logs=${logs} hist=${hist} focus=${settings.focus || []} planned=${Math.max(1, liftCount(schedule))}
+      phases=${prog ? null : Object.fromEntries(plan.weeks.map((w, i) => [addDays(plan.start, 7 * i), w.phase]))}
       ms=${ms} onMilestones=${() => setSheet({ type:'milestones' })}
       caliberProps=${{ caliber, delta:caliberDelta, refLabel:caliberRefLabel, maxes:settings.maxes, bwLb:bwNow, sex:(settings.profile || {}).sex, onInfo:() => setSheet({ type:'caliber' }), onLogBw:() => setSheet({ type:'bw' }), onBoard:() => setSheet({ type:'board' }) }}
       foodProps=${{ nut, targets, todayT, food, onAdd:(meal, date) => setSheet({ type:'food', meal, date }), onSetup:() => setSheet({ type:'nutSetup' }),
