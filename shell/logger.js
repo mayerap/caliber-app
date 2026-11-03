@@ -66,7 +66,7 @@
     native.system = { rest: r => plugin.rest(r).catch(() => {}), widgets: data => plugin.widgets({ data }).catch(() => {}),
       // the workout in progress, kept on the iPhone (WorkoutStore) for the logger, the Watch and the Lock Screen;
       // -> { newer } when the Watch or a Lock Screen button changed it since
-      live: (ws, units, name) => plugin.live({ ws, units, name }).catch(() => ({})),
+      live: (ws, units, name, effort) => plugin.live({ ws, units, name, effort }).catch(() => ({})),
       // the workout as changed on the Watch or the Lock Screen: { ws }
       listen: listen(plugin, 'workout'),
       // replaces scheduled reminders ([{ id, title, body, at }]) and the "Rest's up" alert; -> { granted, scheduled }
