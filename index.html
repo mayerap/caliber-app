@@ -470,7 +470,7 @@ textarea.notes{width:100%;min-height:90px;border-radius:12px;border:1px solid va
 .vs .score small{font-size:11px;color:var(--muted);margin-top:2px;white-space:nowrap}
 .duels{padding:12px 16px}
 .duel-who{display:flex;justify-content:space-between;gap:10px;font-size:13px;font-weight:700;margin-bottom:4px}
-.duel-who span{display:inline-flex;align-items:center;gap:6px;min-width:0}
+.duel-who > span{display:inline-flex;align-items:center;gap:6px;min-width:0}
 .duel{padding:6px 0}
 .duel-h{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:8px;align-items:baseline}
 .duel-h .num{font-size:16px;font-weight:500;color:var(--muted);white-space:nowrap}
@@ -3386,7 +3386,7 @@ function TimeChart({ points, trend, marks, goal, proj, fmtV = v => Math.round(v)
       ${sc.ticks.map(v => html`<g key=${'g' + v}><line x1=${pl} x2=${W - pr} y1=${y(v)} y2=${y(v)} stroke="var(--line)"/>
         <text x=${pl - 6} y=${y(v) + 4} textAnchor="end" fontSize="12" fill="var(--muted)">${fmtV(v)}</text></g>`)}
       ${goal && html`<g><line x1=${pl} x2=${W - pr} y1=${y(goal.v)} y2=${y(goal.v)} stroke="var(--text)" strokeWidth="1.2" strokeDasharray="1 4" strokeLinecap="round"/>
-        <text x=${pl + 6} y=${y(goal.v) - 5} fontSize="12" fill="var(--text)">${goal.label}</text></g>`}
+        <text x=${pl + 6} y=${y(goal.v) - 5 < pt + 12 ? y(goal.v) + 15 : y(goal.v) - 5} fontSize="12" fill="var(--text)">${goal.label}</text></g>`}
       ${points.map((p, i) => html`<circle key=${'p' + i} cx=${x(p.d)} cy=${y(p.v)} r="2.6" fill="color-mix(in srgb,var(--text) 42%,var(--surface))"/>`)}
       ${line && html`<path className="lc-line" d=${line} pathLength="1" fill="none" stroke="var(--accent-fill)" strokeWidth="2.6" strokeLinejoin="round" strokeLinecap="round"/>`}
       ${proj && proj.length === 2 && html`<path d=${`M${x(proj[0].d)},${y(proj[0].v)} L${x(proj[1].d)},${y(proj[1].v)}`} fill="none" stroke="var(--accent-fill)" strokeWidth="2" strokeDasharray="4 4" opacity=".75"/>`}
@@ -5840,7 +5840,7 @@ function BodySection({ entries, units, goal, onLog, onDelete, pace }){
       <span className="num big">${fmtW(now, units)}<span className="muted" style=${{fontSize:20,fontWeight:600,marginLeft:4,fontStretch:'100%'}}>${units}</span></span>
       <div className="chart-sub">${sentence}</div>
       ${show.length >= 2 ? html`<${TimeChart} points=${show.map(p => ({ d:p.date, v:u(p.w), tip:[shortDate(p.date), `${fmtW(p.w, units)} ${units} on the scale`, `Trend ${fmtW(p.t, units)} ${units}`] }))}
-          trend=${show.map(p => ({ d:p.date, v:u(p.t) }))} goal=${goal ? { v:u(goal), label:`Goal ${fmtW(goal, units)}` } : null}
+          trend=${show.map(p => ({ d:p.date, v:u(p.t) }))} goal=${goal ? { v:u(goal), label:`Goal ${String(fmtW(goal, units)).replace(/\.0$/, '')}` } : null}
           proj=${eta ? [{ d:show[show.length - 1].date, v:u(now) }, { d:eta, v:u(goal) }] : null} minSpan=${units === 'kg' ? 4 : 10}
           fmtV=${v => (Math.round(v * 10) / 10).toString()} label=${`Body weight trend, ${fmtW(now, units)} ${units} now. ${sentence}.`}/>
         <div className="chart-legend">
