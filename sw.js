@@ -1,7 +1,7 @@
 // Web companion service worker (template; build-companion.mjs fills in VERSION and FILES).
 // Network first, so a deploy shows up on the next open; the cached copy after 4 seconds or offline,
 // so the app still opens in a gym with no signal. Supabase and other sites are never touched.
-const VERSION = "922902a0ed24";
+const VERSION = "112a4dbc6c33";
 const CACHE = 'caliber-' + VERSION;
 const FILES = ["./","admin.html","approve.html","fonts/BarlowSemiCondensed-500-latin-ext.woff2","fonts/BarlowSemiCondensed-500-latin.woff2","fonts/BarlowSemiCondensed-600-latin-ext.woff2","fonts/BarlowSemiCondensed-600-latin.woff2","fonts/BarlowSemiCondensed-700-latin-ext.woff2","fonts/BarlowSemiCondensed-700-latin.woff2","fonts/BigShouldersDisplay-700-latin-ext.woff2","fonts/BigShouldersDisplay-700-latin.woff2","fonts/BigShouldersDisplay-800-latin-ext.woff2","fonts/BigShouldersDisplay-800-latin.woff2","fonts/InterTight-400-800-latin-ext.woff2","fonts/InterTight-400-800-latin.woff2","fonts/fonts.css","icon-180.png","icon-192.png","icon-32.png","icon-512.png","icon.svg","manifest.webmanifest","privacy.html","shell/ai.js","shell/auth.css","shell/auth.js","shell/board.js","shell/friends.js","shell/logger.js","shell/requests.js","shell/sync.js","vendor/capacitor.js","vendor/htm.umd.js","vendor/react-dom.production.min.js","vendor/react.production.min.js","vendor/supabase.js","vendor/xlsx.full.min.js"];
 

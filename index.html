@@ -278,6 +278,15 @@ textarea.notes{width:100%;min-height:90px;border-radius:12px;border:1px solid va
 .ov-stats{display:grid;grid-template-columns:repeat(3,1fr)}
 .ov-stats div + div{border-left:1px solid var(--line);padding-left:16px}
 .ov-stats .num{font-size:44px;line-height:1;display:block}
+.ov-time{margin:14px 0 4px;padding:12px;border-radius:14px;background:var(--raised)}
+.ov-time-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 2px 8px;font-weight:600;font-size:14px}
+.ov-time-btn{display:inline-flex;align-items:center;gap:6px;margin:12px 0 2px;font-size:14px}
+.ov-time-btn svg{width:16px;height:16px}
+.ov-core{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 4px;padding:10px 12px;border-radius:14px;background:var(--raised);cursor:pointer}
+.ov-core span{display:flex;flex-direction:column;gap:2px;min-width:0}
+.ov-core b{font-size:14px}
+.ov-core small{color:var(--muted);font-size:13px}
+.ov-core input{width:22px;height:22px;accent-color:var(--accent);flex-shrink:0}
 .ov-stats small{color:var(--muted);font-size:13px}
 .mchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
 /* Session card flips over to a muscle map */
@@ -1754,8 +1763,11 @@ const LIB_AREAS = { legs:['squat','hinge','lunge','glute','kext','kflex','calf']
   pull:['hpull','vpull','reardelt','biceps'], core:['abs'] };
 const EQ_LABEL = { barbell:'barbell', rack:'rack', bench:'flat bench', incline:'adjustable bench', db:'dumbbells', pullup:'pull-up bar', dips:'dip station', cable:'cable machine',
   legmachine:'leg extension or curl machine', legpress:'leg press', ez:'EZ bar', gym:'gym machine', bands:'resistance bands' };
+// Kit that isn't an equipment setting: shown as what you need (planned only with a full gym)
+const NEEDS_KIT = { abwheel:'An ab wheel' };
 function libNeeds(x){
   if(x.eq && !LIB_BY_ID[x.id]) return x.eq;
+  if(NEEDS_KIT[x.id]) return NEEDS_KIT[x.id];
   const req = REQ[x.id] || ['gym'];
   if(!req.length) return 'No equipment';
   const t = req.map(r => r.split('|').map(k => EQ_LABEL[k] || k).join(' or '));
@@ -2084,6 +2096,66 @@ function sessionMinutes(day, warm, cool){
   return Math.round(work / 60 / 5) * 5 + (warm || 0) + (cool || 0);
 }
 
+/* Fit today's session to the time you have (Today: "Time today"). Shorter: the warm-up goes to 5 minutes and the
+   cool-down off, then accessory sets come off (down to 2), then accessories go from the end, then the other lifts lose
+   sets; the main lifts are kept to the last. Longer: the warm-up and cool-down come back, accessories and other lifts
+   gain a set each, then up to two accessories are added for muscles the day trains (your focus muscles first).
+   Returns the new day, warm-up and cool-down minutes, and a short list of what changed. */
+function setSetsTo(e, n){
+  if(e.groups && e.groups.length > 1){
+    let diff = n - e.sets; const g = e.groups.map(x => ({ ...x }));
+    for(let i = g.length - 1; diff < 0 && i >= 0; i--){ const take = Math.min(g[i].sets, -diff); g[i].sets -= take; diff += take; }
+    if(diff > 0) g[g.length - 1].sets += diff;
+    e.groups = g.filter(x => x.sets > 0);
+  }
+  e.sets = n;
+}
+function fitSession(day, target, warm, cool, opts = {}){
+  // main lifts (or a program's first lift), then the other barbell and compound work, then accessories; tests stay as they are
+  const rank = (e, i) => e.test ? 3 : e.role === 'main' ? 2 : e.role === 'sec' ? 1 : e.role === 'acc' ? 0 : i === 0 ? 2 : e.bar ? 1 : 0;
+  const ranks = new Map(), d = { ...day, ex:day.ex.map((e, i) => { const x = { ...e }; ranks.set(x, rank(e, i)); return x; }) };
+  let w = warm || 0, c = cool || 0;
+  const mins = () => sessionMinutes(d, w, c), start = mins();
+  const ofRank = r => d.ex.filter(e => (ranks.get(e) || 0) === r && !exUnit(e.n));
+  const orig = new Map(d.ex.map(e => [e, e.sets])), dropped = [], added = [];
+  if(start > target){
+    if(w > 5 && mins() > target) w = 5;
+    if(c > 0 && mins() > target) c = 0;
+    for(const r of [0, 1, 2]){
+      // a set at a time from the last exercise of this kind, down to 2
+      for(let guard = 0; mins() > target && guard < 60; guard++){
+        const e = ofRank(r).slice().reverse().find(x => x.sets > 2);
+        if(!e) break;
+        setSetsTo(e, e.sets - 1);
+      }
+      // then whole exercises from the end, focus work last; never the last lift standing
+      while(mins() > target && r < 2){
+        const list = ofRank(r), e = list.filter(x => !x.focus).pop() || list.pop();
+        if(!e || d.ex.length <= 1) break;
+        d.ex.splice(d.ex.indexOf(e), 1); dropped.push(e.n);
+      }
+      if(mins() <= target) break;
+    }
+  } else if(start < target - 4){
+    if(warm > 0 && w < 10) w = 10;
+    if(cool > 0 && c < 5) c = 5;
+    for(const r of [0, 1]){
+      for(const e of ofRank(r).slice()){ if(mins() + 3 > target) break; setSetsTo(e, e.sets + 1); }
+    }
+    const lib = opts.addable ? opts.addable(d) : [];
+    for(const e of lib){
+      if(added.length >= 2 || mins() + 6 > target) break;
+      d.ex.push(e); added.push(e.n);
+    }
+  }
+  const setDiff = d.ex.reduce((a, e) => a + (orig.has(e) ? e.sets - orig.get(e) : 0), 0);
+  const changes = [
+    w !== (warm || 0) && (w ? `${w}-minute warm-up` : 'no warm-up'), c !== (cool || 0) && (c ? `${c}-minute cool-down` : 'no cool-down'),
+    setDiff && `${Math.abs(setDiff)} ${setDiff > 0 ? 'more' : 'fewer'} ${Math.abs(setDiff) === 1 ? 'set' : 'sets'}`,
+    dropped.length && `${dropped.join(', ')} left out`, added.length && `${added.join(' and ')} added`].filter(Boolean);
+  return { day:d, warm:w, cool:c, minutes:mins(), changes, fits:mins() <= target + 2 };
+}
+
 // A planned session that's all running or other timed work, with no loads: shown as cardio
 const runDay = d => d && d.type === 'lift' && d.session && d.session.ex.length > 0 && d.session.ex.every(e => exUnit(e.n) && !(e.w > 0));
 function WeekStrip({ week, logs, onDay }){
@@ -2222,10 +2294,13 @@ function MuscleMap({ day, onBack }){
     </div>
   </div>`;
 }
-function SessionOverview({ day, warm, cool, units, label, onOpen, budget }){
+const TIME_OPTS = [30, 45, 60, 75, 90];
+function SessionOverview({ day, warm, cool, units, label, onOpen, budget, time, core }){
   const [flipped, setFlipped] = useState(false);
+  const [timeOpen, setTimeOpen] = useState(false);
   const sets = totalSets(day);
-  const mins = sessionMinutes(day, warm, cool);
+  // added core shows its own few minutes, which the 5-minute rounding would otherwise swallow
+  const mins = core && core.on ? sessionMinutes({ ...day, ex:day.ex.filter(e => !e.coreAdded) }, warm, cool) + core.min : sessionMinutes(day, warm, cool);
   const mus = Object.entries(dayMuscles(day.ex)).sort((a, b) => b[1] - a[1]).filter(([m]) => m !== 'Other').slice(0, 4).map(x => x[0]);
   let keys = day.ex.filter(e => e.role === 'main');
   if(keys.length < 2) keys = keys.concat(day.ex.filter(e => !keys.includes(e) && (e.role === 'sec' || e.bar)));
@@ -2234,7 +2309,7 @@ function SessionOverview({ day, warm, cool, units, label, onOpen, budget }){
   const techs = day.ex.filter(e => e.tech).length, test = day.ex.find(e => e.test);
   const capped = day.ex.filter(e => e.dbCapped || e.plateCapped).length;
   const extra = [(warm || cool) && `Includes ${[warm && `a ${warm}-minute warm-up`, cool && `a ${cool}-minute cool-down`].filter(Boolean).join(' and ')}`,
-    budget && mins > budget + 2 && `Runs about ${mins - budget} min over your ${budget} minutes; shorten the warm-up or cool-down in the workout if you need to`,
+    budget && mins > budget + 2 && !(time && time.min) && `Runs about ${mins - budget} min over your ${budget} minutes; tap Adjust time to fit it`,
     techs && `${techs} ${techs === 1 ? 'intensity technique' : 'intensity techniques'}`,
     capped && `${capped === 1 ? 'One load is' : `${capped} loads are`} set to what your plates and dumbbells allow; the workout explains each`].filter(Boolean).join('. ');
   return html`<div className=${'ov-flip' + (flipped ? ' flipped' : '')}><div className="ov-inner">
@@ -2245,6 +2320,18 @@ function SessionOverview({ day, warm, cool, units, label, onOpen, budget }){
       <div><span className="num">${day.ex.length}</span><small>Exercises</small></div>
       <div><span className="num">${sets}</span><small>Working sets</small></div>
     </div>
+    ${time && (timeOpen || time.min ? html`<div className="ov-time">
+        <div className="ov-time-head"><span>How long do you have?</span>${time.min && html`<button className="link" onClick=${() => { time.onSet(null); setTimeOpen(false); }}>Back to plan</button>`}</div>
+        <${Seg} wide label="Minutes you have today" value=${time.min || null}
+          onChange=${v => time.onSet(v)} options=${TIME_OPTS.map(v => ({ v, l:`${v}` }))}/>
+        <p className="note" style=${{margin:'8px 2px 0'}}>${time.min
+          ? `Fitted to ${time.min} minutes, today only (usually about ${time.usual})${time.changes.length ? `: ${time.changes.join(', ')}` : ''}.${time.fits ? '' : ' That’s as short as it goes while keeping your main lifts.'}`
+          : `Minutes, including the warm-up and cool-down. Caliber trims or adds accessory work and sets to fit, for today only.`}</p>
+      </div>`
+      : html`<button className="link ov-time-btn" onClick=${() => setTimeOpen(true)}><${Icon} name="clock"/>Short on time, or have extra? Adjust time</button>`)}
+    ${core && html`<label className="ov-core">
+        <span><b>Add core</b><small>${core.n}, ${core.sets} sets, ${core.on ? 'added, about' : 'adds about'} ${core.min} min</small></span>
+        <input type="checkbox" checked=${core.on} onChange=${e => core.onToggle(e.target.checked)} aria-label=${`Add ${core.n} to today’s session, about ${core.min} minutes`}/></label>`}
     <div className="mchips">${mus.map(m => html`<span key=${m} className="chip">${m}</span>`)}
       <button className="chip accent flip-chip" onClick=${() => setFlipped(true)} aria-label="Flip to see the muscles this session works"><${Icon} name="body"/>Muscle map</button></div>
     <div className="keyl">
@@ -2478,10 +2565,10 @@ function SnapshotTiles({ readiness, showReadiness, nutOn, targets, foodToday, bw
   </div>`;
 }
 
-function LiftToday({ day, units, openSheet, warm, cool, tiles, budget }){
+function LiftToday({ day, units, openSheet, warm, cool, tiles, budget, time, core }){
   const open = (ex, i) => morphOpen(() => openSheet({ type:'exercise', ex, loc:{ dayId:day.id, idx:i } }));
   return html`<div className="today-body">
-      <${SessionOverview} day=${day} warm=${warm} cool=${cool} units=${units} onOpen=${open} budget=${budget}/>
+      <${SessionOverview} day=${day} warm=${warm} cool=${cool} units=${units} onOpen=${open} budget=${budget} time=${time} core=${core}/>
       ${tiles}
       ${(() => {
         const t = day.ex.find(e => e.test);
@@ -2530,7 +2617,7 @@ function RestToday({ next, units, warm, cool, tiles }){
     </div>
   </div>`;
 }
-function Today({ week, units, readiness, openSheet, onSkip, blockMeta, todayLog, bw, nutOn, targets:weekT, todayTargets, foodToday, checkinDue, logs, warm, cool, budget, where, setWhere, whereAsk, onRemember, whereSrc, dayName, locSuggest, onLocSuggest, quick, ring, onRing, trip, fitWeek, friendsCard, requestNote }){
+function Today({ week, units, readiness, openSheet, onSkip, blockMeta, todayLog, bw, nutOn, targets:weekT, todayTargets, foodToday, checkinDue, logs, warm, cool, budget, time, core, where, setWhere, whereAsk, onRemember, whereSrc, dayName, locSuggest, onLocSuggest, quick, ring, onRing, trip, fitWeek, perpOffer, friendsCard, requestNote }){
   const ti = todayIndex();
   const traveling = tripOn(trip, localDate());
   const d = week[ti];
@@ -2589,6 +2676,11 @@ function Today({ week, units, readiness, openSheet, onSkip, blockMeta, todayLog,
           <${Icon} name="travel"/>${trip ? `Trip ${tripRange({ start:trip.start, end:trip.start })}` : 'Traveling?'}
         </button>`}
       </div>
+      ${perpOffer && html`<div className="loc-suggest panel" style=${{marginTop:12}} data-tour="perpoffer">
+        <p style=${{margin:'0 0 10px'}}><b>Last week of ${perpOffer.name}.</b> Keep going after it with a perpetual program built from it: your days, maxes and exercises, with a goal and focus you pick.</p>
+        <div className="btns2"><button className="btn primary" style=${{height:44}} onClick=${perpOffer.onOpen}>Make it perpetual</button>
+          <button className="btn secondary" style=${{height:44}} onClick=${perpOffer.onSkip}>Not now</button></div>
+      </div>`}
       ${fitWeek && html`<div className="loc-suggest panel" style=${{marginTop:12}}>
         <p style=${{margin:'0 0 10px'}}><b>Starting mid-week?</b> ${fitWeek.moved} ${fitWeek.moved === 1 ? 'session was' : 'sessions were'} planned for days that have already gone by. Fit this week’s sessions into the days you have left${fitWeek.dropped ? `; ${fitWeek.dropped} won’t fit and will be left out this week` : ''}.</p>
         <div className="btns2"><button className="btn primary" style=${{height:44}} onClick=${fitWeek.onFit}>Fit my week</button>
@@ -2620,7 +2712,7 @@ function Today({ week, units, readiness, openSheet, onSkip, blockMeta, todayLog,
       ${live && d.type === 'lift' && setWhere && where === 'home' && html`<p className="home-note"><${Icon} name="home"/>${d.session.homeSwaps
         ? `At home: ${d.session.homeSwaps} ${d.session.homeSwaps === 1 ? 'exercise' : 'exercises'} swapped to fit your setup.`
         : 'At home: everything in this session fits your setup.'}${d.session.homeDropped && d.session.homeDropped.length ? ` Left out: ${d.session.homeDropped.join(', ')}.` : ''}${d.session.dbCapped ? ` Reps raised on ${d.session.dbCapped} dumbbell ${d.session.dbCapped === 1 ? 'exercise' : 'exercises'} to match your heaviest dumbbells.` : ''}${d.session.plateCapped ? ` ${d.session.plateCapped} barbell ${d.session.plateCapped === 1 ? 'load was' : 'loads were'} adjusted to your home plates.` : ''}</p>`}
-      ${live && d.type === 'lift' && html`<${LiftToday} day=${d.session} units=${units} openSheet=${openSheet} budget=${budget} warm=${warm} cool=${cool} tiles=${tiles}/>`}
+      ${live && d.type === 'lift' && html`<${LiftToday} day=${d.session} units=${units} openSheet=${openSheet} budget=${budget} time=${time} core=${core} warm=${warm} cool=${cool} tiles=${tiles}/>`}
       ${live && d.type === 'cardio' && html`<div className="today-body" style=${{marginTop:12}}><${CardioToday} c=${d.cardio || DEFAULT_CARDIO}/>${tiles}</div>`}
       ${live && d.type === 'active' && html`<div className="today-body" style=${{marginTop:12}}><${ActiveToday} a=${d.active || DEFAULT_ACTIVE}/>${tiles}</div>`}
       ${(d.skipped || d.type === 'rest') && html`<${RestToday} next=${next} units=${units} warm=${warm} cool=${cool} tiles=${tiles}/>`}
@@ -2885,6 +2977,8 @@ function Program({ week, trip, units, setLifts, openSheet, toast, imported, impo
             ${prog.weeks.map(w => html`<button key=${w.week} className="pick" aria-pressed=${w.week === importWeek} onClick=${() => openSheet({ type:'impWeek', week:w.week })}>Week ${w.week}</button>`)}
           </div>`}
           ${(() => { const w = prog.weeks.find(x => x.week === importWeek); return w && w.label ? html`<p className="note">${w.label}</p>` : null; })()}
+          ${!imported.template && html`<button className="btn primary block" style=${{marginTop:14,height:44}} onClick=${() => openSheet({ type:'perpetual' })}>Make it perpetual</button>
+            <p className="note" style=${{marginBottom:0}}>Keep going after it ends: Caliber turns it into six-week blocks that never run out, using your days, maxes and exercises.</p>`}
           <button className="btn secondary block" style=${{marginTop:14,height:44}} onClick=${() => removeImport()}>${imported.template ? 'End this race plan' : 'Remove import'}</button>
         </section>`
       : html`<section className="panel" aria-label="Lifting days">
@@ -3413,7 +3507,7 @@ const GUIDE = [
   { tab:'today', sel:'.today-actions', opt:1, t:'Move, skip, cardio or travel', d:'Busy day? Move today’s session to another day or skip it, and the week rearranges. Log cardio you did anywhere, from bike to stair stepper, or start a run, walk, hike or ride outdoors and GPS tracks distance, pace, climb and your route on a map (hikes show the climb as you go). Traveling? Pick what the hotel has and your lift days fit it until you’re home.' },
   { tab:'today', sel:'.wkcard', opt:1, t:'This week', d:'Your week at a glance. Finished sessions fill in. Tap any day to see what’s planned.' },
   { tab:'today', sel:'[data-tour="friendsweek"]', opt:1, t:'Friends this week', d:'Once you have friends, each ring fills as that person trains this week, with the week’s best moment below. Open Standings and posts to rank everyone by sessions, volume or time, or see the newest post and react. Tap a friend’s ring for their latest workout.' },
-  { tab:'today', find:() => document.querySelector('.screen section.ov') || document.querySelector('.screen .hero'), opt:1, t:'Today’s session', d:'How long it takes, how many exercises and working sets, and which muscles it trains.' },
+  { tab:'today', find:() => document.querySelector('.screen section.ov') || document.querySelector('.screen .hero'), opt:1, t:'Today’s session', d:'How long it takes, how many exercises and working sets, and which muscles it trains. Short on time, or have extra? Tap Adjust time, pick how long you have, and today’s session trims or adds work to fit. On days without core work, tick Add core for a few minutes of it.' },
   { tab:'today', sel:'.flip-chip', opt:1, t:'Muscle map', d:'Tap to flip the card and see which muscles today hits, front and back, from low to very high load.' },
   { tab:'today', find:byHeading('Exercises'), opt:1, t:'Exercises', d:'Each exercise with its sets, reps and weight. A trophy means the set you’re scheduled for would be a PR. Tap one for form cues, past performance, or to swap it.' },
   { tab:'today', sel:'.tiles', opt:1, t:'Daily check-ins', d:'Quick readiness, body weight, food and water logging. Readiness tunes today’s loads to how you slept and recovered. Connect Apple Health in the check-in to add sleep, heart rate variability and resting heart rate from Apple Watch, Oura, Whoop or another tracker.' },
@@ -3438,7 +3532,7 @@ const GUIDE = [
   { tab:'program', find:byHeading('Your week'), opt:1, t:'Your week', d:'This week’s plan, day by day. Tap a day to see its session, move it, or swap it with another day.' },
   { tab:'program', find:() => [...document.querySelectorAll('.screen button.callout')].find(b => /Travel/.test(b.textContent)), opt:1, t:'Travel mode', d:'Away from your gym? Set the dates and what equipment you’ll have, and every lift day on the trip swaps to fit. Your program picks back up when you’re home.' },
   { tab:'program', find:() => [...document.querySelectorAll('.screen button')].find(b => /Restart this block/.test(b.textContent)), t:'Start over or catch up', d:'Missed a stretch? Restart the block from week 1 with the same exercises. Starting partway through a week, Today offers Fit my week to fit the sessions into the days you have left.' },
-  { tab:'program', sel:'.import', opt:1, t:'Bring your own program', d:'Already have a program? Import a spreadsheet, or let Claude read a photo, PDF or pasted text. A screenshot of a single workout, like today’s WOD, loads as a workout to do now. Imported programs stay on a week until you move to the next one: tap it on the Program tab.' },
+  { tab:'program', sel:'.import', opt:1, t:'Bring your own program', d:'Already have a program? Import a spreadsheet, or let Claude read a photo, PDF or pasted text. A screenshot of a single workout, like today’s WOD, loads as a workout to do now. Imported programs stay on a week until you move to the next one: tap it on the Program tab. To keep going after one ends, tap Make it perpetual: Caliber builds never-ending six-week blocks from its days, maxes and exercises, with the goal and focus you pick.' },
   { tab:'program', sel:'[data-tour="exlib"]', opt:1, t:'Exercise library', d:'Search every exercise, from squats to sled pushes, and see how to do it: the main lifts have a video with the working muscles highlighted, the rest a moving figure. Plus what it works and what you need. Not there? Add your own exercise and ask for it to be added. When it is, Today tells you and moves your sets over to it.' },
   { tab:'program', sel:'[data-tour="wods"]', opt:1, t:'Free workouts', d:'8- and 12-week race plans for HYROX-format events, Hero workouts, benchmarks, and challenges like the 1,000 lb club. Load any workout into today and check off the sets as you go. There’s also a link to today’s workout on CrossFit.com.' },
   { tab:'history', t:'History', d:'Every workout you’ve finished. Tap one to see each set, share it, or fix a weight or reps you got wrong with Edit workout. Totals and PRs update when you save.' },
@@ -3853,6 +3947,14 @@ const FIGS = {
     a:['torso'], m:['M19 18Q24 16.6 26.6 21'], ns:true, nt:true },
   plank:{ e:[['M4 33.6H44',1.6]], h:[10.2,21.4], s:[13.4,23.4], p:[27.5,26.4], k1:[34,28.8], f1:[40.5,31.6], k2:[33.6,29.2], f2:[40.2,32], e1:[13.8,32.4], w1:[20,32.6],
     a:['torso'], ns:true, nt:true },
+  // seen from the front: up on one forearm, the top arm to the ceiling, hips lifting into a straight line
+  sideplank:{ e:[['M4 33.6H44',1.6]], h:[9.6,21.8], s:[12.8,24.2], p:[26.4,31.6], k1:[33.8,32.4], f1:[41,33], k2:[34,31.8], f2:[41.2,32.4], e1:[12.8,32.6], w1:[16.4,32.9],
+    e2:[13.4,17.6], w2:[14,11], a:['torso'], m:[arr(30,26.5,30,21)], ns:true, nt:true },
+  // kneeling, hands on the wheel under the shoulders, rolling out to a long line
+  abwheel:{ e:[['M4 39.6H46',1.6]], h:[19.6,20.6], s:[22.8,24.6], p:[32.6,28.8], k1:[35.2,38.8], f1:[44.4,39], k2:[34.6,38.6], f2:[43.8,38.8], e1:[22.6,31], w1:[22.4,36.4],
+    fe:[{ t:'plate', x:22.4, y:36.6, r:3 }], a:['torso'], m:[arr(28,44,14,44)], ns:true, nt:true },
+  // facing you, side-on to a cable at chest height: the handle at the chest, pressed straight out toward you
+  pallof:{ ...STAND_FRONT, e:[['M44 4V42',2.4],['M43 19.6L25.6 19.6',1.3]], e1:[29.4,18.8], w1:[25.6,19.6], e2:[18.6,18.8], w2:[22.4,19.6], a:['torso'] },
   // Conditioning, Olympic lifting and gymnastics movements (Free workouts, race plans, whiteboard photos)
   bwsquat:{ h:[24.5,8.6], s:[23.5,13], p:[18,25.5], k1:[29,27.5], f1:[27,38.6], k2:[28,27], f2:[26,38.6], e1:[29.6,15], w1:[35.4,15], a:['thigh'], m:[arr(41,35,41,20)], sx:23,
     to:{ h:[23.6,4.4], s:[23,9.4], p:[22.4,23], k1:[25.4,31], k2:[24.4,31], e1:[23.6,16.4], w1:[24.4,22.6] } },
@@ -3981,6 +4083,9 @@ const FIG_TO = {
   // core
   cablecrunch:{ e:[['M42 4V42',2.4],['M41 7L24.8 7.6',1.3],['M4 39.6H30',1.6]], h:[22.6,9.6], s:[21.6,14.4], e1:[25.6,10.6], w1:[24.8,7.6] },
   deadbug:{ k1:[33,32], f1:[40.6,33], k2:[26.4,23], f2:[33.4,23.2], e1:[11,25], w1:[8,19], e2:[14.4,24.4], w2:[14.6,17] },
+  sideplank:{ p:[26.5,28.4], k1:[34,30.8], k2:[34.2,30.2] },
+  abwheel:{ h:[11,31.2], s:[15.2,32.5], p:[25.4,35.7], e1:[9.7,34.5], w1:[4.2,36.4], fe:[{ x:4.2, y:36.6 }] },
+  pallof:{ e:[['M44 4V42',2.4],['M43 19.6L24.9 17.4',1.3]], e1:[26.4,16.2], w1:[24.9,17.4], e2:[21.6,16.2], w2:[23.1,17.4] },
   crunch:{ h:[8.6,31.4], s:[12.6,32.8], e1:[14.6,28.4], w1:[10.4,28.2] }
 };
 Object.entries(FIG_TO).forEach(([id, to]) => { if(FIGS[id]) FIGS[id].to = to; });
@@ -4006,7 +4111,7 @@ const FIG_MATCH = [
   [/machine.*shoulder|shoulder press machine/,'machineohp'],[/(db|dumbbell|seated|arnold).*(shoulder|press)/,'dbohp'],[/overhead press|ohp|military|shoulder press|push press/,'ohp'],
   [/chest-?supported|t-bar/,'csrow'],[/(one|single)-?arm.*row|(db|dumbbell) row/,'dbrow'],[/machine.*row/,'machinerow'],[/cable.*row|seated.*row/,'cablerow'],[/row/,'bbrow'],
   [/pushdown|pressdown|triceps kickback/,'pushdown'],[/overhead.*(extension|triceps)/,'ohext'],[/(db|dumbbell).*skull/,'dbskull'],[/skull/,'skull'],
-  [/hanging|leg raise|knee raise/,'legraise'],[/cable crunch|kneeling crunch/,'cablecrunch'],[/dead ?bug/,'deadbug'],[/plank/,'plank'],[/crunch|sit-?up/,'crunch']
+  [/hanging|leg raise|knee raise/,'legraise'],[/cable crunch|kneeling crunch/,'cablecrunch'],[/dead ?bug/,'deadbug'],[/side plank/,'sideplank'],[/plank/,'plank'],[/ab ?wheel|roll-?out/,'abwheel'],[/pallof/,'pallof'],[/crunch|sit-?up/,'crunch']
 ];
 function figFor(ex){
   if(!ex) return null;
@@ -4206,6 +4311,21 @@ const GUIDE_PATTERN = {
     mistakes:['Arching your lower back to finish','Feet too far out, so hamstrings take over'] }
 };
 const GUIDE_EX = {
+  deadbug:{ setup:'On your back, arms straight up, knees bent over your hips.',
+    cues:['Press your lower back into the floor and keep it there','Reach one arm back as the opposite leg straightens','Breathe out as you go; stop before your back lifts','Bring them back and switch sides'],
+    mistakes:['Lower back arching off the floor','Rushing the reps'] },
+  plank:{ setup:'Forearms on the floor, elbows under your shoulders, legs straight behind you.',
+    cues:['Make a straight line from your head to your heels','Squeeze your glutes and brace like you’re about to be poked','Push the floor away with your forearms','Breathe steadily and hold for the time'],
+    mistakes:['Hips sagging','Hips piked high','Holding your breath'] },
+  sideplank:{ setup:'On your side, elbow under your shoulder, feet stacked.', also:'Glutes, shoulders',
+    cues:['Lift your hips until your body is one straight line','Push the floor away with your forearm','Keep your hips stacked; don’t let them roll back','Hold for the time, then switch sides'],
+    mistakes:['Hips dropping toward the floor','Shoulder shrugged up to your ear'] },
+  abwheel:{ setup:'Kneel on a pad, hands on the wheel under your shoulders. New to it? Roll toward a wall so it stops you.', also:'Lats, shoulders',
+    cues:['Tuck your ribs and squeeze your glutes before you move','Roll out slowly, keeping that brace','Go only as far as you can without your lower back sagging','Pull back with your abs, not your hips'],
+    mistakes:['Lower back arching at the far end','Hips shooting back first on the way in'] },
+  pallof:{ setup:'Stand side-on to a cable or band at chest height, handle at your chest, feet hip width.', also:'Obliques, glutes',
+    cues:['Brace and press the handle straight out','Don’t let the cable turn you; stay square','Hold a breath at full reach, then bring it back','Do every rep, then turn around for the other side'],
+    mistakes:['Twisting toward the cable','Standing too close, so there’s no pull'] },
   nordic:{ setup:'Kneel on a pad with your ankles anchored: a partner, a loaded bar or a heavy couch.',
     cues:['Keep a straight line from knees to head','Lower forward as slowly as you can','Catch yourself with your hands near the floor','Push off lightly and pull back up with your hamstrings'],
     mistakes:['Bending at the hips','Dropping fast at the end'] },
@@ -5663,7 +5783,8 @@ function startWorkoutState(day, score, prefs = {}){
     }) };
 }
 // The unit a movement is counted in when it isn't reps: "Run (m)", "Row (km)", "Easy run (min)", "Bike (cal)"
-function exUnit(n){ const m = String(n || '').match(/\((m|km|miles|min|sec|cal)\)/); return m ? m[1] : null; }
+// Planks are holds: their reps are seconds, whether or not the name says so
+function exUnit(n){ const m = String(n || '').match(/\((m|km|miles|min|sec|cal)\)/); return m ? m[1] : /^(forearm |front |side )?plank$/i.test(String(n || '').trim()) ? 'sec' : null; }
 const UNIT_M = { m:1, km:1000, miles:1609.34 };
 // The "moved" tile: weight moved, or for runs and rows with nothing lifted, the distance
 function movedTile(log, units){ return log.distM && !(log.vol > 0) ? [fmtDist(log.distM), 'Distance'] : [fmtK(toUnit(log.vol || 0, units)), `${units} moved`]; }
@@ -9294,6 +9415,10 @@ const LIB = [
   ['legraise','Hanging leg raise','abs','bw','Abs','bench',0,''],
   ['cablecrunch','Cable crunch','abs','cable','Abs','bench',.4,''],
   ['deadbug','Dead bug','abs','bw','Abs','bench',0,''],
+  ['plank','Plank','abs','bw','Abs','bench',0,''],
+  ['sideplank','Side plank','abs','bw','Abs','bench',0,''],
+  ['abwheel','Ab wheel rollout','abs','bw','Abs','bench',0,''],
+  ['pallof','Pallof press','abs','cable','Abs','bench',.12,''],
   ['dbpullover','Dumbbell pullover','vpull','db','Back','bench',.22,''],
   // Bodyweight and band moves, last so they're only picked when nothing else fits (a hotel room)
   ['bwsquat','Bodyweight squat','squat','bw','Quads','squat',0,''],
@@ -9331,7 +9456,7 @@ const REQ = {
   pullup:['pullup'], latpd:['cable'], chinup:['pullup'], cablefly:['cable'], pecdeck:['gym'], dbfly:['db','bench|incline'],
   cablelat:['cable'], dblat:['db'], machinelat:['gym'], facepull:['cable'], revpec:['gym'], revfly:['db'],
   ezcurl:['ez|barbell'], dbcurl:['db'], hammer:['db'], cablecurl:['cable'], inclinecurl:['db','incline'], pushdown:['cable'], ohext:['cable'],
-  skull:['ez|barbell','bench|incline'], dbskull:['db','bench|incline'], dip:['dips'], legraise:['pullup'], cablecrunch:['cable'], deadbug:[], dbpullover:['db','bench|incline'],
+  skull:['ez|barbell','bench|incline'], dbskull:['db','bench|incline'], dip:['dips'], legraise:['pullup'], cablecrunch:['cable'], deadbug:[], plank:[], sideplank:[], abwheel:['gym'], pallof:['cable|bands'], dbpullover:['db','bench|incline'],
   bwsquat:[], bwsplit:[], bwlunge:[], bwcalf:[], declinepush:[], slrdl:[], glutebridge:[], pikepush:[], doorrow:[],
   bandrow:['bands'], bandpd:['bands'], bandpullapart:['bands'], bandlat:['bands'], bandcurl:['bands'], bandpush:['bands']
 };
@@ -9418,7 +9543,8 @@ const SWAP_LADDER = {
   cablefly:['dbfly','pecdeck','pushup'], pecdeck:['cablefly','dbfly'], cablelat:['dblat','machinelat'], machinelat:['dblat','cablelat'],
   facepull:['revfly','revpec'], revpec:['revfly','facepull'], ezcurl:['dbcurl','cablecurl'], cablecurl:['dbcurl','inclinecurl','ezcurl'],
   pushdown:['dbskull','dip','skull'], ohext:['dbskull','skull','pushdown'], skull:['dbskull','ohext'], dip:['pushdown','dbskull','cgbench'],
-  cablecrunch:['legraise','deadbug'], legraise:['deadbug','cablecrunch']
+  cablecrunch:['legraise','deadbug','abwheel','plank'], legraise:['deadbug','cablecrunch','abwheel','plank'], deadbug:['plank','legraise','cablecrunch'],
+  plank:['deadbug','abwheel','sideplank'], sideplank:['pallof','plank'], abwheel:['plank','deadbug','legraise'], pallof:['sideplank','plank','cablecrunch']
 };
 // Last resorts when nothing above fits, like a hotel room: a split squat trains a squat better than air squats
 Object.entries({ bwsplit:['backsquat','frontsquat','hacksquat','legpress','gobletsquat'], slrdl:['deadlift','rdl','dbrdl'], glutebridge:['hipthrust','pullthrough'],
@@ -9554,7 +9680,7 @@ function canDo(lib, eq){ return !eq || (REQ[lib.id] || ['gym']).every(t => t.spl
 // Day templates: [pattern, role, preferred exercise]. Slots are in priority order; short sessions keep the first few.
 const DAY_TPL = {
   fa:{ name:'Full body A', slots:[['squat','main','backsquat'],['hpush','main','bench'],['hpull','sec','bbrow'],['kflex','acc'],['sidedelt','acc'],['biceps','acc'],['abs','acc']] },
-  fb:{ name:'Full body B', slots:[['hinge','main','deadlift'],['vpush','main','ohp'],['vpull','sec','pullup'],['lunge','sec','walklunge'],['triceps','acc'],['calf','acc'],['reardelt','acc']] },
+  fb:{ name:'Full body B', slots:[['hinge','main','deadlift'],['vpush','main','ohp'],['vpull','sec','pullup'],['lunge','sec','walklunge'],['triceps','acc'],['calf','acc'],['reardelt','acc'],['abs','acc']] },
   fc:{ name:'Full body C', slots:[['squat','sec','frontsquat'],['hpush','sec','inclinedb'],['hpull','sec','cablerow'],['hinge','sec','rdl'],['reardelt','acc'],['biceps','acc','hammer'],['abs','acc']] },
   ua:{ name:'Upper A', slots:[['hpush','main','bench'],['hpull','sec','bbrow'],['hpush','sec','inclinedb'],['vpull','sec','latpd'],['sidedelt','acc'],['biceps','acc'],['triceps','acc']] },
   la:{ name:'Lower A', slots:[['squat','main','backsquat'],['hinge','sec','rdl'],['squat','acc','legpress'],['kflex','acc'],['calf','acc'],['abs','acc']] },
@@ -9649,14 +9775,30 @@ const FOCUS_OPTIONS = {
 const UPPER = ['Chest','Back','Shoulders','Biceps','Triceps','Abs'], LOWER = ['Quads','Hamstrings','Glutes','Calves','Abs'];
 const FOCUS_DAYS = { ua:UPPER, ub:UPPER, la:LOWER, lb:LOWER, lga:LOWER, lgb:LOWER, pa:['Chest','Shoulders','Triceps','Abs'], pb:['Chest','Shoulders','Triceps','Abs'],
   pla:['Back','Biceps','Shoulders','Abs'], plb:['Back','Biceps','Shoulders','Hamstrings','Abs'], fa:FOCUS_MUSCLES, fb:FOCUS_MUSCLES, fc:FOCUS_MUSCLES };
-function buildDay(tid, phase, k, st, swaps){
+/* Core: lower-body and full-body days always end with one short core exercise (3 sets or fewer, short rests), kept
+   even when the session is too short for the other accessories. It rotates through the core exercises your
+   equipment allows: a different one on each core day of the week, moving on each block. */
+const CORE_ROTATION = ['cablecrunch', 'plank', 'pallof', 'legraise', 'deadbug', 'sideplank', 'abwheel'];
+function coreFor(has, used, turn){
+  const ok = CORE_ROTATION.map(id => LIB_BY_ID[id]).filter(l => l && canDo(l, has) && !used.has(l.id));
+  return ok.length ? ok[((turn % ok.length) + ok.length) % ok.length] : null;
+}
+function makeCore(e){
+  e.core = true; e.sets = Math.min(e.sets, 3); e.rest = 45;
+  // holds go by seconds: 30–45 for a plank, 20–30 a side for a side plank
+  if(exUnit(e.n) === 'sec'){ const [lo, hi] = e.id === 'sideplank' ? [20, 30] : [30, 45]; e.reps = lo; e.hi = hi; e.repsLabel = `${lo}–${hi}`; e.w = 0; e.rir = null; e.noEffort = true; }
+  return e;
+}
+function buildDay(tid, phase, k, st, swaps, turn = 0){
   const tpl = DAY_TPL[tid], has = equipSet(st), cap = SESSION_CAP[st.minutes] || 5;
   const used = new Set(st.experience === 'beginner' ? HARD_FOR_NEW : []), all = [];   // too hard to start with: left out for beginners
   tpl.slots.forEach((slot, si) => {
-    const lib = pickExercise(slot, has, used, swaps[`${tid}:${si}`]);
+    const swap = swaps[`${tid}:${si}`], rot = slot[0] === 'abs' && !swap && coreFor(has, used, turn);
+    const lib = rot || pickExercise(slot, has, used, swap);
     if(!lib) return;
     used.add(lib.id);
-    all.push(makeEx(lib, slot[1], phase, k, st, si));
+    const e = makeEx(lib, slot[1], phase, k, st, si);
+    all.push(slot[0] === 'abs' ? makeCore(e) : e);
   });
   const focus = (st.focus || []).filter(m => (FOCUS_DAYS[tid] || []).includes(m));
   const extra = [];
@@ -9668,7 +9810,9 @@ function buildDay(tid, phase, k, st, swaps){
   });
   const core = all.filter(e => e.role !== 'acc'), acc = all.filter(e => e.role === 'acc');
   const ordered = [...core, ...acc.filter(e => focus.includes(e.m)), ...extra, ...acc.filter(e => !focus.includes(e.m))];
-  const ex = ordered.slice(0, cap + (extra.length ? 1 : 0));
+  const ex = ordered.filter(e => !e.core).slice(0, cap + (extra.length ? 1 : 0));
+  const coreEx = ordered.find(e => e.core);
+  if(coreEx) ex.push(coreEx);   // the core exercise stays, last, whatever the session length
   ex.forEach(e => { if(focus.includes(e.m)){ e.focus = true; if(!e.slot.toString().startsWith('f') && e.role !== 'main' && phase !== 'del' && phase !== 'peak') e.sets += 1; } });
   const main = ex.find(e => e.role === 'main') || ex[0];
   const final = st.supersets ? autoSupersets(ex) : ex;
@@ -9713,12 +9857,33 @@ function generatePlan(settings, n, opts = {}){
   const swaps = opts.swaps || {};
   const weeks = phases.map((ph, wi) => {
     let k = 0; while(wi - k - 1 >= 0 && phases[wi - k - 1] === ph) k++;
-    const days = split.ids.map(tid => buildDay(tid, ph, k, settings, swaps));
+    // which core exercise each core day gets: the next ones along each block
+    const coreDays = split.ids.filter(t => DAY_TPL[t].slots.some(x => x[0] === 'abs')).length;
+    let ci = ((opts.block || 1) - 1) * coreDays;
+    const days = split.ids.map(tid => buildDay(tid, ph, k, settings, swaps, DAY_TPL[tid].slots.some(x => x[0] === 'abs') ? ci++ : 0));
     if(settings.techniques !== false && settings.goal !== 'strength' && ((ph === 'acc' && k >= 1) || ph === 'int'))
       days.forEach(d => d.ex.forEach(e => { const t = techFor(e, settings.goal, ph, k); if(t) e.tech = t; }));
     return { week:wi + 1, phase:ph, days };
   });
-  return { v:1, n, settings, weeks, swaps, splitName:split.name, start, block:opts.block || 1, undo:null };
+  return { v:1, n, settings, weeks, swaps, splitName:split.name, start, block:opts.block || 1, undo:null, core:true };
+}
+// Plans built before every lower-body and full-body day had its core exercise get one added, nothing else changed
+function withCore(plan){
+  if(plan.core) return plan;
+  const st = plan.settings || {}, has = equipSet(st), out = { ...plan, core:true };
+  out.weeks = plan.weeks.map((w, wi) => {
+    let k = 0; while(wi - k - 1 >= 0 && plan.weeks[wi - k - 1].phase === w.phase) k++;
+    let ci = ((plan.block || 1) - 1) * w.days.filter(d => DAY_TPL[d.tpl] && DAY_TPL[d.tpl].slots.some(x => x[0] === 'abs')).length;
+    return { ...w, days:w.days.map(d => {
+      const tpl = DAY_TPL[d.tpl];
+      if(!tpl || !tpl.slots.some(x => x[0] === 'abs')) return d;
+      const turn = ci++;
+      if(d.ex.some(e => e.core || e.pattern === 'abs' || e.m === 'Abs')) return d;
+      const lib = coreFor(has, new Set(d.ex.map(e => e.id)), turn);
+      return lib ? { ...d, ex:[...d.ex, makeCore(makeEx(lib, 'acc', w.phase, k, st, 'core'))] } : d;
+    }) };
+  });
+  return out;
 }
 function rawPlanIndex(plan){ return weeksBetween(plan.start, weekKey()); }
 function planIndex(plan){ return Math.max(0, Math.min(plan.weeks.length - 1, rawPlanIndex(plan))); }
@@ -9739,6 +9904,65 @@ function settingsFromImport(prev, profile, maxes){
   }
   (maxes || []).forEach(m => { const k = MAX_KEYS[liftKey(m.n)]; if(k) st.maxes[k] = m.e1rm; });
   return st;
+}
+
+/* Turn an imported (or built) program into a perpetual one, from what's in it: the days a week and session length,
+   maxes for the four main lifts (your logged sets first, then the weights the program asks for), the exercises you
+   picked (each takes the matching slot in Caliber's split), and a suggested goal and focus muscles. */
+const workSetsOf = e => typeof e.sets === 'number' ? e.sets : (e.sets || []).filter(x => x.type !== 'W').length;
+function importLib(e){ const l = (e.id && LIB_BY_ID[e.id]) || libForName(e.n); return l && !l.mine && l.pattern ? l : null; }
+function perpetualFromImport(imported, hist, settings, week){
+  const prog = imported.program, wk = prog.weeks.find(w => w.week === week) || prog.weeks[0];
+  const all = prog.weeks.flatMap(w => w.days.flatMap(d => d.ex));
+  const days = Math.max(MIN_LIFTS, Math.min(MAX_LIFTS, Math.max(...prog.weeks.map(w => w.days.length))));
+  // session length: the file's own, else about 3 minutes a working set with rest
+  const perDay = wk.days.reduce((a, d) => a + d.ex.reduce((b, e) => b + workSetsOf(e), 0), 0) / Math.max(1, wk.days.length);
+  const minutes = imported.profile && imported.profile.minutes ? settings.minutes : perDay <= 13 ? 45 : perDay <= 18 ? 60 : perDay <= 23 ? 75 : 90;
+  // maxes: the lift itself, logged in the last four months, else the heaviest this week of the program asks for
+  const maxes = {}, maxFrom = {}, since = addDays(localDate(), -120);
+  MAIN_LIFTS.forEach(([k]) => {
+    let logged = 0, planned = 0;
+    Object.entries(hist).forEach(([key, h]) => { const l = LIB_BY_ID[key] || libForName(h.n);
+      if(l && l.ref === k && l.ratio === 1 && h.recent && h.recent.date >= since) logged = Math.max(logged, h.recent.e1rm || 0); });
+    wk.days.forEach(d => d.ex.forEach(e => { const l = importLib(e), hi = topReps(e);
+      if(l && l.ref === k && l.ratio === 1 && e.w > 0 && hi > 0) planned = Math.max(planned, e.w * (1 + (hi + (e.rir ?? 2)) / 30)); }));
+    // an estimate, so to the nearest 5 lb
+    if(logged > 0){ maxes[k] = Math.round(logged / 5) * 5; maxFrom[k] = 'log'; }
+    else if(planned > 0){ maxes[k] = Math.round(planned / 5) * 5; maxFrom[k] = 'plan'; }
+  });
+  // your exercises: each slot keeps Caliber's pick if your program has it, else takes your most-used one of that kind.
+  // Past the main lifts, one already placed on another day leaves Caliber's pick, so the week keeps some variety.
+  const has = equipSet(settings), freq = {}, placed = new Set();
+  all.forEach(e => { const l = importLib(e); if(l && canDo(l, has)) freq[l.id] = (freq[l.id] || 0) + 1; });
+  const yours = Object.keys(freq).map(id => LIB_BY_ID[id]), swaps = {};
+  PLAN_SPLITS[days].ids.forEach(tid => {
+    const taken = new Set(settings.experience === 'beginner' ? HARD_FOR_NEW : []);
+    DAY_TPL[tid].slots.forEach((slot, si) => {
+      const def = pickExercise(slot, has, taken, null);
+      const same = yours.filter(l => l.pattern === slot[0] && !taken.has(l.id) && (slot[1] === 'main' || !placed.has(l.id)))
+        .sort((a, b) => freq[b.id] - freq[a.id]);
+      const pick = def && freq[def.id] ? def : same[0] || def;
+      if(!pick) return;
+      taken.add(pick.id); placed.add(pick.id);
+      if(!def || pick.id !== def.id) swaps[`${tid}:${si}`] = pick.id;
+    });
+  });
+  // goal: the file's own, else from the reps on the big lifts
+  let reps = 0, n = 0;
+  wk.days.forEach(d => d.ex.forEach(e => { const l = importLib(e), hi = topReps(e), s = workSetsOf(e);
+    if(l && ['squat','hinge','hpush','vpush'].includes(l.pattern) && hi > 0 && s > 0){ reps += hi * s; n += s; } }));
+  const avg = n ? reps / n : null, fromFile = !!(imported.profile && imported.profile.goal);
+  const goal = fromFile || avg == null ? settings.goal : avg <= 5.5 ? 'strength' : avg >= 8.5 ? 'size' : 'both';
+  const goalWhy = fromFile ? 'Your program file names this goal.' : avg != null ? `Your main lifts were about ${Math.round(avg)} reps a set.` : '';
+  // focus: muscles your program gave clearly more weekly sets than Caliber's plan would
+  const base = generatePlan({ ...settings, goal, minutes, focus:[], mode:'perpetual', target:null }, days, { swaps });
+  const imp = {}, gen = {};
+  wk.days.forEach(d => d.ex.forEach(e => { const l = importLib(e), m = l ? l.m : guessMuscle(e.n); if(FOCUS_MUSCLES.includes(m)) imp[m] = (imp[m] || 0) + workSetsOf(e); }));
+  base.weeks[0].days.forEach(d => d.ex.forEach(e => { if(FOCUS_MUSCLES.includes(e.m)) gen[e.m] = (gen[e.m] || 0) + e.sets; }));
+  const focus = FOCUS_MUSCLES.filter(m => (imp[m] || 0) >= 6 && imp[m] >= 1.4 * (gen[m] || 0) + 2)
+    .sort((a, b) => imp[b] / (gen[b] || 1) - imp[a] / (gen[a] || 1)).slice(0, 2);
+  const left = [...new Set(all.filter(e => !importLib(e)).map(e => e.n))];
+  return { days, minutes, maxes, maxFrom, swaps, goal, goalWhy, focus, imp, gen, left, ids:[...new Set(all.map(importLib).filter(Boolean).map(l => l.id))] };
 }
 
 /* ---------- Rebuild after a skipped session ---------- */
@@ -9860,6 +10084,41 @@ function PlacesPicker(){
   </div>`;
 }
 const EQUIP_KEYS = ['homePlates', 'dbMax', 'homeEquip', 'homeCardio', 'maxes', 'testMethod'];
+/* Make an imported program perpetual: what carries over from it, then the goal and focus muscles to fine-tune,
+   with week 1 of the result updating as you choose. */
+function PerpetualSheet({ name, conv, settings, units, kept, onStart, onClose }){
+  const [goal, setGoal] = useState(conv.goal);
+  const [focus, setFocus] = useState(conv.focus);
+  const st = { ...settings, goal, focus, minutes:conv.minutes, maxes:{ ...settings.maxes, ...conv.maxes }, mode:'perpetual', target:null };
+  const week1 = React.useMemo(() => generatePlan(st, conv.days, { swaps:conv.swaps }).weeks[0], [goal, focus.join()]);
+  const yours = new Set(conv.ids), keptN = new Set(week1.days.flatMap(d => d.ex.filter(e => yours.has(e.id)).map(e => e.id))).size;
+  const toggle = m => setFocus(focus.includes(m) ? focus.filter(x => x !== m) : focus.length >= 3 ? focus : [...focus, m]);
+  const list = a => a.map(x => x.toLowerCase()).join(', ').replace(/, ([^,]*)$/, ' and $1');
+  const lifts = MAIN_LIFTS.filter(([k]) => conv.maxes[k]).map(([k, n]) => `${n.replace('Overhead press', 'Press').replace('Back squat', 'Squat')} ${Math.round(toUnit(conv.maxes[k], units))} ${units}`);
+  const fromLog = Object.values(conv.maxFrom).includes('log'), fromPlan = Object.values(conv.maxFrom).includes('plan');
+  return html`<${Sheet} title="Make it perpetual" sub=${`Built from ${name}`} onClose=${onClose}>
+    <p className="muted" style=${{margin:'0 4px 14px'}}>Caliber builds six-week blocks that keep going, with your weights moving up as you log. This is what it takes from your program:</p>
+    <div className="panel" style=${{marginBottom:18}}>
+      <div className="setting"><span>Schedule</span><span className="muted" style=${{textAlign:'right'}}>${conv.days} days a week, ${conv.minutes}-minute sessions</span></div>
+      <div className="setting"><span>Maxes</span><span className="muted" style=${{textAlign:'right'}}>${lifts.length ? lifts.join(', ') : 'Your saved maxes'}</span></div>
+      <div className="setting"><span>Exercises</span><span className="muted" style=${{textAlign:'right'}}>${keptN} of your ${conv.ids.length + conv.left.length} kept</span></div>
+      ${lifts.length > 0 && html`<p className="note" style=${{marginBottom:0}}>Maxes are estimated from ${fromLog && fromPlan ? 'your logged sets, or the weights the program asks for where you haven’t logged the lift' : fromLog ? 'your logged sets' : 'the weights the program asks for'}. Change them any time in Training details.</p>`}
+    </div>
+    <div className="opt"><p className="opt-label">Goal</p>
+      <div className="wrap">${Object.entries(GOALS).map(([k, g]) => html`<button key=${k} className="pick" aria-pressed=${goal === k} onClick=${() => setGoal(k)}>${g.label}${k === conv.goal ? ' (suggested)' : ''}</button>`)}</div>
+      ${conv.goalWhy && html`<p className="note">${conv.goalWhy}</p>`}</div>
+    <div className="opt"><p className="opt-label">Muscles to focus on <span className="muted small" style=${{fontWeight:500}}>Up to 3</span></p>
+      <div className="wrap">${FOCUS_MUSCLES.map(m => html`<button key=${m} className="pick" aria-pressed=${focus.includes(m)} disabled=${!focus.includes(m) && focus.length >= 3} onClick=${() => toggle(m)}>${focus.includes(m) ? '✓ ' : ''}${m}</button>`)}</div>
+      <p className="note">${conv.focus.length
+        ? `Suggested: ${list(conv.focus)}. Your program gave ${conv.focus.length === 1 ? 'it' : 'them'} more sets than Caliber’s plan would.`
+        : 'Optional. Pick muscles you want to bring up, and Caliber adds targeted accessory work.'}</p></div>
+    <div className="section-head" style=${{margin:'4px 4px 8px'}}><h2>Week 1</h2><span>${PHASES[week1.phase].name}</span></div>
+    ${week1.days.map(d => html`<div key=${d.id} className="daycard"><h4>${d.name}</h4>
+      <p className="muted small" style=${{margin:0,lineHeight:1.5}}>${d.ex.map((e, i) => html`<span key=${i}>${i ? ', ' : ''}${yours.has(e.id) ? html`<b style=${{color:'var(--text)'}}>${e.n}</b>` : e.n}</span>`)}</p></div>`)}
+    <p className="note">Bold exercises are from your program.${conv.left.length ? ` Not in Caliber’s library, so not carried over: ${conv.left.slice(0, 4).join(', ')}${conv.left.length > 4 ? ` and ${conv.left.length - 4} more` : ''}. Add any of them back with Swap.` : ''}${kept ? ' Your imported program stays in My programs if you want it back.' : ''}</p>
+    <${SheetButton} onClick=${() => onStart({ goal, focus })}>Start perpetual program</${SheetButton}>
+  </${Sheet}>`;
+}
 function TrainingSheet({ settings, units, importedProgram, onSave, onSaveQuiet, onClose, currentWeek, totalWeeks }){
   const [fresh, setFresh] = useState(true);
   const [st, setSt] = useState(() => clone(settings));
@@ -10366,7 +10625,7 @@ function setsReps(ex){
   if(exUnit(ex.n) && ex.targetText) return ex.targetText;   // "3 × 1000 m", "35 min"
   return ex.groups && ex.groups.length > 1
     ? ex.groups.map(g => `${g.sets} × ${g.label}`).join(' + ')
-    : `${ex.sets} × ${repsOf(ex)}`;
+    : `${ex.sets} × ${repsOf(ex)}${exUnit(ex.n) ? ` ${exUnit(ex.n)}` : ''}`;   // a library plank: "3 × 30–45 sec"
 }
 
 /* ---------- Program blocks ---------- */
@@ -10940,7 +11199,7 @@ function App(){
   REST_ALERT = settings.restAlert || 'beep';
   const [plan, setPlan] = useState(() => {
     const p = store.get('plan', null), n = liftCount(loadSchedule());
-    if(p && p.v === 1 && p.n === n && p.weeks && p.weeks.length) return p;
+    if(p && p.v === 1 && p.n === n && p.weeks && p.weeks.length) return withCore(p);
     const sv = store.get('settings', null);
     return generatePlan(sv ? { ...DEFAULT_SETTINGS, ...sv } : DEFAULT_SETTINGS, n, p ? { start:p.start, block:p.block, swaps:p.swaps } : {});
   });
@@ -11229,6 +11488,10 @@ function App(){
   const [fitAsked, setFitAsked] = useState(() => store.get('fitWeekAsked', ''));
   const startedThisWeek = prog ? !!(imported && imported.at >= new Date(wkKey + 'T00:00:00').getTime()) : plan.start === wkKey;
   const doneDays = new Set(week.map((d, i) => i).filter(i => logs.some(l => l.date === addDays(wkKey, i) && !l.extra && l.kind === 'lift')));
+  // the last week of an imported program: offer to keep going with a perpetual one built from it
+  const [perpAsked, setPerpAsked] = useState(() => store.get('perpAsked', null));
+  const perpOffer = prog && !imported.template && prog.weeks.length > 1 && importWeek >= Math.max(...prog.weeks.map(w => w.week)) && perpAsked !== imported.at
+    ? { name:imported.name || 'your program', onOpen:() => setSheet({ type:'perpetual' }), onSkip:() => { store.set('perpAsked', imported.at); setPerpAsked(imported.at); } } : null;
   const fitProposal = startedThisWeek && fitAsked !== wkKey ? fitWeekFrom(assignSessions(active, sessions.length), todayIndex(), doneDays) : null;
   function fitWeek(){
     if(!fitProposal) return;
@@ -11314,14 +11577,42 @@ function App(){
   const homeOnly = !both && (settings.equipment === 'home' || settings.equipment === 'db');
   const homeAdj = d => homeOnly ? capBarbell(capDumbbells(d, settings.dbMax), settings.homePlates && settings.homePlates.units === units ? settings.homePlates : null, units) : d;
   const programWeek = homeOnly ? travelWeek.map(d => d.type === 'lift' && d.session ? { ...d, session:homeAdj(d.session) } : d) : travelWeek;
-  const todayWeek = homeToday || dbCap || homeInv
+  const plannedWeek = homeToday || dbCap || homeInv
     ? travelWeek.map((d, i) => i === todayIndex() && d.type === 'lift'
       ? { ...d, session:capBarbell(capDumbbells(homeToday ? adaptDay(d.session, homeSet(settings), settings, hist) : d.session, dbCap), homeInv, units) } : d)
     : travelWeek;
   // What the workout records: warm-ups without a bike or rower when there's no gym
   // warm-up and cool-down minutes: yours, or 5 + 5 for 45-minute sessions and 10 + 5 otherwise, so the total fits
   const warmDef = settings.warmMin == null ? (settings.minutes <= 45 ? 5 : 10) : settings.warmMin, coolDef = settings.coolMin == null ? 5 : settings.coolMin;
-  const workOpts = { warm:warmDef, cool:coolDef, warmFree:!!settings.warmFree, coolFree:!!settings.coolFree, equipment: traveling ? (trip.equip.includes('barbell') ? 'home' : 'db') : homeToday ? 'home' : settings.equipment,
+  // Time today: more or less time than usual reshapes today's session to fit (fitSession), for today only
+  const [timeToday, setTimeTodayState] = useState(() => { const t = store.get('timeToday', null); return t && t.date === localDate() ? t : null; });
+  function setTimeToday(min, dayId){ const t = min ? { date:localDate(), dayId, min } : null; setTimeTodayState(t); store.set('timeToday', t); }
+  const todayPlanned = plannedWeek[todayIndex()];
+  const eqToday = traveling ? new Set(trip.equip) : homeToday ? homeSet(settings) : equipSet(settings);
+  const timeFit = timeToday && timeToday.date === localDate() && todayPlanned && todayPlanned.type === 'lift' && todayPlanned.session && todayPlanned.session.id === timeToday.dayId
+    ? fitSession(todayPlanned.session, timeToday.min, warmDef, coolDef, { addable:dd => {
+        const eq = eqToday, have = new Set(dd.ex.map(e => e.id).filter(Boolean));
+        const trains = Object.entries(dayMuscles(dd.ex)).filter(([m]) => FOCUS_MUSCLES.includes(m)).sort((a, b) => a[1] - b[1]).map(x => x[0]);
+        const focus = settings.focus || [], out = [];
+        [...focus.filter(m => trains.includes(m)), ...trains.filter(m => !focus.includes(m))].forEach(m => {
+          const lib = (FOCUS_OPTIONS[m] || []).map(([, id]) => LIB_BY_ID[id]).find(l => l && !have.has(l.id) && canDo(l, eq) && !out.some(o => o.id === l.id));
+          if(lib) out.push(annotate({ ex:[{ ...makeEx(lib, 'acc', 'acc', 0, settings, 't' + m), extraTime:true }] }, hist, settings, true, units).ex[0]);
+        });
+        return out; } })
+    : null;
+  // Add core today: a day without core work can have one core exercise added, for today only
+  const [coreToday, setCoreTodayState] = useState(() => { const c = store.get('coreToday', null); return c && c.date === localDate() ? c : null; });
+  function setCoreToday(on, dayId){ const c = on ? { date:localDate(), dayId } : null; setCoreTodayState(c); store.set('coreToday', c); }
+  const todayBase = timeFit ? timeFit.day : todayPlanned && todayPlanned.type === 'lift' ? todayPlanned.session : null;
+  const coreEx = todayBase && !todayBase.ex.some(e => e.core || e.m === 'Abs') ? (() => {
+    const lib = coreFor(eqToday, new Set(todayBase.ex.map(e => e.id)), Math.floor(Date.now() / 864e5));
+    return lib ? annotate({ ex:[{ ...makeCore(makeEx(lib, 'acc', 'acc', 0, settings, 'core')), coreAdded:true }] }, hist, settings, true, units).ex[0] : null;
+  })() : null;
+  const coreOn = !!(coreEx && coreToday && coreToday.dayId === todayPlanned.session.id);
+  const reshaped = coreOn ? { ...todayBase, ex:[...todayBase.ex, coreEx] } : timeFit ? todayBase : null;
+  const todayWeek = reshaped ? plannedWeek.map((d, i) => i === todayIndex() ? { ...d, session:reshaped } : d) : plannedWeek;
+  const warmToday = timeFit ? timeFit.warm : warmDef, coolToday = timeFit ? timeFit.cool : coolDef;
+  const workOpts = { warm:warmToday, cool:coolToday, warmFree:!!settings.warmFree, coolFree:!!settings.coolFree, equipment: traveling ? (trip.equip.includes('barbell') ? 'home' : 'db') : homeToday ? 'home' : settings.equipment,
     where: traveling ? 'travel' : both ? where : null };
   // Warm-up and cool-down cardio: whatever machines you have at home, none while traveling, the lot at the gym
   workOpts.cardio = traveling ? [] : workOpts.equipment === 'home' || workOpts.equipment === 'db' ? (settings.homeCardio || []) : null;
@@ -12113,10 +12404,23 @@ Reply with only a JSON object and nothing else: {"label": short food name, "serv
     if(n !== plan.n) regen(settings, n);
     if(!quiet) toast(imported && imported.libId ? 'Back to your Caliber program. The one you removed is still in My programs.' : 'Back to your Caliber program.');
   }
+  // An imported program becomes a perpetual one, built from its days, maxes and exercises (perpetualFromImport)
+  function makePerpetual(conv, { goal, focus }){
+    const st = { ...settings, goal, focus, minutes:conv.minutes, maxes:{ ...settings.maxes, ...conv.maxes }, mode:'perpetual', target:null };
+    // your program's exercise picks replace earlier ones for this split's slots
+    const swaps = Object.fromEntries(Object.entries(plan.swaps || {}).filter(([k]) => !PLAN_SPLITS[conv.days].ids.some(t => k.startsWith(t + ':') && /^\d+$/.test(k.slice(t.length + 1)))));
+    saveSettings(st);
+    setImported(null); store.set('imported', null); saveOverride(null); store.set('perpAsked', null);
+    if(conv.days !== liftCount(schedule)){ const next = applyLiftCount(schedule, conv.days); setSchedule(next); store.set('schedule', next); }
+    savePlan(generatePlan(st, conv.days, { start:wkKey, block:(plan.block || 0) + 1, swaps:{ ...swaps, ...conv.swaps } }));
+    setSheet(null);
+    toast(`Perpetual program started: ${GOALS[goal].label.toLowerCase()}, ${conv.days} days a week. Week 1 starts this week.`);
+  }
+  const perpConv = sheet?.type === 'perpetual' && prog && !imported.template ? perpetualFromImport(imported, hist, settings, importWeek) : null;
 
   const screens = {
     today: html`<${Today} requestNote=${reqNoteFor ? { x:reqNoteFor, lib:requestLib(reqNoteFor), onSwitch:() => switchMine(reqNoteFor), onKeep:() => keepMine(reqNoteFor) } : null} friendsCard=${FR && social.joined && fs.loaded && fs.friends.length ? { me:friendWeek(logs, liftCount(schedule)), myId:fs.me, friends:fs.friends, feed:fs.feed,
-        person:personFor, units, onReact:friendReact, onOpen:id => setSheet({ type:'friendLatest', id }), onAll:() => setSheet({ type:'friends' }) } : null} fitWeek=${fitProposal && !trip ? { ...fitProposal, onFit:fitWeek, onSkip:skipFit } : null} quick=${{
+        person:personFor, units, onReact:friendReact, onOpen:id => setSheet({ type:'friendLatest', id }), onAll:() => setSheet({ type:'friends' }) } : null} perpOffer=${perpOffer} fitWeek=${fitProposal && !trip ? { ...fitProposal, onFit:fitWeek, onSkip:skipFit } : null} quick=${{
         slots:quickSlots, seenHint:quickSeen, water:water[localDate()] || 0, onWater:addWater,
         waterGoal:(nut && nut.waterGoal) || (units === 'kg' ? 3000 / 29.57 : 100),
         caffToday:caff[localDate()] || [], caff2d:[...(caff[addDays(localDate(), -1)] || []), ...(caff[localDate()] || [])],
@@ -12136,7 +12440,11 @@ Reply with only a JSON object and nothing else: {"label": short food name, "serv
         onStreak:() => { store.set('histView', 'calendar'); go('history'); }
       }} ring=${prog ? { phases:prog.weeks.map(() => 'acc'), idx:Math.max(0, prog.weeks.findIndex(w => w === impWeekObj)) } : { phases:plan.weeks.map(w => w.phase), idx:planIdx }}
       onRing=${() => go('program')} week=${todayWeek} todayTargets=${todayT} where=${where} setWhere=${both && !traveling ? setWhere : null} whereAsk=${both && !traveling ? whereAsk : null} onRemember=${rememberWhere} whereSrc=${both && !traveling ? whereSrc : null} dayName=${dayName} locSuggest=${both && !traveling ? locSuggest : null} trip=${trip} onLocSuggest=${acceptLocSuggest} units=${units} readiness=${readinessToday} todayLog=${todayLog} bw=${bw} nutOn=${!!nut} targets=${targets} foodToday=${food[localDate()] || []} checkinDue=${checkinDue} openSheet=${setSheet} onSkip=${skipDay} blockMeta=${blockMeta}
-      logs=${logs} warm=${warmDef} cool=${coolDef} budget=${settings.minutes}/>`,
+      logs=${logs} warm=${warmToday} cool=${coolToday} budget=${timeToday && timeFit ? timeToday.min : settings.minutes}
+      time=${todayPlanned && todayPlanned.type === 'lift' && todayPlanned.session && !todayLog && !workout ? { min:timeFit ? timeToday.min : null, usual:sessionMinutes(todayPlanned.session, warmDef, coolDef),
+        changes:timeFit ? timeFit.changes : [], fits:!timeFit || timeFit.fits, onSet:m => setTimeToday(m, todayPlanned.session.id) } : null}
+      core=${coreEx && !todayLog && !workout ? { n:coreEx.n, sets:coreEx.sets, min:Math.max(1, Math.round(coreEx.sets * (45 + restSeconds(coreEx)) / 60)), on:coreOn,
+        onToggle:on => setCoreToday(on, todayPlanned.session.id) } : null}/>`,
     program: html`<${Program} week=${programWeek} libraryCount=${programs.length} usualLifts=${liftCount(schedule)} trip=${trip} units=${units} setLifts=${setLifts} openSheet=${setSheet} toast=${toast}
       moved=${moved} overridden=${!!override} resetWeek=${resetWeek} plan=${plan} planIdx=${planIdx} newBlock=${newBlock} restartBlock=${restartBlock} toPerpetual=${toPerpetual} pendingTests=${pendingTests} programTitle=${programTitle}
       imported=${imported} importWeek=${importWeek} setImportWeek=${setImportWeek} removeImport=${removeImport}
@@ -12381,6 +12689,8 @@ Reply with only a JSON object and nothing else: {"label": short food name, "serv
       onApply=${() => applyRebuild(sheet.index, sheet.proposal)} onClose=${close}/>`;
   if(sheet?.type === 'recalc') sheetEl = html`<${RecalcSheet} fromN=${liftCount(schedule)} toN=${sheet.toN} plan=${plan} planIdx=${planIdx} fromDay=${sheet.fromDay}
       onConfirm=${() => applyRecalc(sheet.next)} onAlternative=${() => setSheet({ type:'skip', index:sheet.fromDay })} onClose=${close}/>`;
+  if(perpConv) sheetEl = html`<${PerpetualSheet} name=${imported.name || 'your program'} conv=${perpConv} settings=${settings} units=${units} kept=${!!imported.libId}
+      onStart=${choice => makePerpetual(perpConv, choice)} onClose=${close}/>`;
   if(sheet?.type === 'training') sheetEl = html`<${TrainingSheet} settings=${settings} units=${units} importedProgram=${!!prog} onSave=${saveTraining} onClose=${close}
     onSaveQuiet=${(st, note) => { if(st) saveSettings(st); close(); if(st || note) toast([st && 'Equipment and maxes saved.', note].filter(Boolean).join(' ')); }}
       currentWeek=${planIdx + 1} totalWeeks=${plan.weeks.length}/>`;
