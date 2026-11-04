@@ -35,7 +35,7 @@
 <body>
 <main>
 <h1>Privacy Policy</h1>
-<p class="muted">Caliber · Last updated November 1, 2026</p>
+<p class="muted">Caliber · Last updated November 4, 2026</p>
 
 <p>Caliber is a strength-training app for iPhone and Apple Watch. This policy explains what Caliber stores, why, who else handles it, and how you can export or delete it. In short: your data is used only to run Caliber for you. It is never sold, never used for advertising, and never shared with anyone except the services that keep Caliber running.</p>
 
@@ -57,6 +57,8 @@
   <li>During a workout on Apple Watch, Caliber reads your heart rate and active energy to show them live, and saves the finished workout (with heart rate and active energy) to Apple Health.</li>
   <li>During a cardio session on Apple Watch or iPhone, Caliber also reads the distance you covered, to fill in your log. Strength and cardio sessions you finish are saved to Apple Health as workouts.</li>
   <li>For your daily readiness check-in, Caliber reads last night's sleep and, if you connect Apple Health for readiness, your heart rate variability, resting heart rate, breathing rate and sleeping temperature, from your Apple Watch or any tracker that writes them to Apple Health (such as Oura or Whoop). It compares them with your own recent readings on your iPhone.</li>
+  <li>If you turn on <b>Read weight and body fat from Apple Health</b> (Progress → Body), Caliber reads the weight and body fat readings that a smart scale or another app saves to Apple Health, with their times, and adds them to your weigh-ins. Like weigh-ins you log yourself, they're kept in your Caliber account so they're on all your devices. Turn it off there, or remove Caliber's access in the Health app, at any time.</li>
+  <li>If you turn on <b>Save water to Apple Health</b> or <b>Read water from Apple Health</b> (Progress → Food → Water → Settings), Caliber saves the water you log to Apple Health, or reads the water other apps save there and adds it to your day. Water read from Apple Health stays on your iPhone.</li>
   <li>Only a workout's average and maximum heart rate, time in your target zone and distance leave your devices, as part of that session in your Caliber account, plus the sleep score and body score Caliber calculates for your check-in (and the name of the tracker they came from). Your sleep stages and recovery readings themselves are never uploaded.</li>
   <li>Health data is never used for advertising or marketing, never sold, and never shared with third parties.</li>
   <li>You can change Caliber's Health access at any time in the Health app, or on Apple Watch in Settings → Health.</li>
@@ -73,15 +75,17 @@
 
 <h2>AI food estimates</h2>
 <p>When you use Estimate, Describe a meal or a meal photo, the text or photo you provide is sent from our server to Anthropic, which runs the Claude AI model, to work out the foods and nutrition. Caliber does not keep the photo or text after the answer comes back; only the foods you choose to add are saved to your log. Anthropic handles this under its commercial terms and privacy policy. These features are optional; you can always add foods yourself.</p>
+<p>When you scan or type a food barcode, only the barcode number is sent from your device to Open Food Facts, a free public food database, to find the product's nutrition. Nothing else about you goes with it, and you don't need an account there.</p>
 
 <h2>Friends</h2>
 <p>Friends is optional and off until you set it up. When you do, you choose a display name, and you can turn each of these on or off at any time:</p>
 <ul>
 <li><b>Share my stats:</b> your friends see a summary of your training: number of workouts, training time, volume lifted, how your sets split across muscle groups, and your best lifts.</li>
 <li><b>Post my workouts:</b> your friends see each workout or cardio session you finish: its name, length, sets, volume, distance, climb and any PRs or milestones. Turning this off removes the ones already posted.</li>
+<li><b>Profile picture:</b> if you add one on your Profile, your friends see it next to your name. Remove it there at any time and it’s removed for them too.</li>
 <li><b>Findable by name:</b> other Caliber users can find your display name in search and send you a friend request. With it off, people can only add you with your invite code.</li>
 </ul>
-<p>Only people who are your friends can see your stats and workouts. You become friends when someone uses your invite code or link, or when you accept their request. Anyone with your invite code can add you; you can make a new code at any time, which stops the old one working. Friends can react to your workouts, and you can remove a friend at any time. Your body weight, food, notes, photos and videos are never shared. Display names are checked against a list of offensive words. Deleting your account deletes your friends, requests, posts and reactions.</p>
+<p>Only people who are your friends can see your stats and workouts. You become friends when someone uses your invite code or link, or when you accept their request. Anyone with your invite code can add you; you can make a new code at any time, which stops the old one working. Friends can react to your workouts, and you can remove a friend at any time. Your body weight, food, notes, progress photos and videos are never shared. Display names are checked against a list of offensive words. Deleting your account deletes your friends, requests, posts and reactions.</p>
 
 <h2>Exercise requests</h2>
 <p>When you add your own exercise and leave "Ask for it in the library" on, Caliber sends us its name, the muscle and equipment you chose and any note you write, linked to your account, so we can consider adding it to the library. Only Caliber's team can read requests. Turn the switch off to keep an exercise to yourself. Deleting your account deletes your requests.</p>
@@ -93,6 +97,7 @@
 <ul>
   <li><b>Supabase</b> hosts your account, data and photos, encrypted in transit (HTTPS) and protected so each account can only reach its own data.</li>
   <li><b>Anthropic</b> processes food text and photos for the AI features, as described above.</li>
+  <li><b>Open Food Facts</b> receives barcode numbers you look up, as described above.</li>
   <li><b>Google</b> or <b>Apple</b> confirm who you are if you choose to sign in with them.</li>
   <li><b>Apple</b> stores the workouts Caliber saves to Apple Health, under your control, and Apple Maps provides the maps under your routes.</li>
 </ul>
