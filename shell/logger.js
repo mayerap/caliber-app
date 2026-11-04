@@ -60,6 +60,8 @@
       // water in Health: save a glass (oz), take back Caliber's last one today, read other apps' [{ s, v (oz), src }]
       saveWater: (oz, at) => plugin.saveWater({ oz, at }).then(r => !!r.ok).catch(() => false),
       undoWater: () => plugin.undoWater().then(r => !!r.ok).catch(() => false),
+      // take back the glass Caliber saved at that time (ms), when you change or remove it in today's list
+      deleteWater: at => plugin.deleteWater({ at }).then(r => !!r.ok).catch(() => false),
       water: days => plugin.water({ days }).then(r => r.samples || []).catch(() => []),
     };
   }
