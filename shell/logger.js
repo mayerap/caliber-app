@@ -55,6 +55,12 @@
       connect: () => plugin.connect().then(r => !!r.ok).catch(() => false),
       // an Apple Maps picture of a map rect (MKMapPoint units) for the map under a route; null offline
       routeMap: opts => plugin.routeMap(opts).then(r => cap.convertFileSrc(r.path)).catch(() => null),
+      // smart-scale weigh-ins from Health: [{ t: w | bf, s, v }] (lb, body fat as a fraction); asks for weight and body fat on first use
+      body: days => plugin.body({ days }).then(r => r.samples || []).catch(() => []),
+      // water in Health: save a glass (oz), take back Caliber's last one today, read other apps' [{ s, v (oz), src }]
+      saveWater: (oz, at) => plugin.saveWater({ oz, at }).then(r => !!r.ok).catch(() => false),
+      undoWater: () => plugin.undoWater().then(r => !!r.ok).catch(() => false),
+      water: days => plugin.water({ days }).then(r => r.samples || []).catch(() => []),
     };
   }
   if (cap.isPluginAvailable('CaliberPlaces')) {
@@ -74,7 +80,9 @@
       // friend alerts: this phone's Apple push token; ask may show iPhone's permission prompt -> { granted, token?, env? }
       push: ask => plugin.push({ ask: !!ask }).catch(() => ({ granted: false })),
       // water and caffeine tapped on a Home Screen widget since Caliber was last open (taken once)
-      pending: () => plugin.pending().then(r => r.items || []).catch(() => []) };
+      pending: () => plugin.pending().then(r => r.items || []).catch(() => []),
+      // the camera barcode scanner (Add food): -> { code } when it read one, {} when cancelled, { error: 'denied' | 'unsupported' }
+      scan: () => plugin.scan().catch(() => ({ error: 'failed' })) };
   }
   // Widget links: caliber://open/<screen> (food, week, today), and friend invites: caliber://friend/<code>,
   // whether Caliber was running or launched by the tap.

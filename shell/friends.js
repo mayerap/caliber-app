@@ -21,10 +21,16 @@
     me: uid,
     reason,
     // my shared profile: { nickname, summary, discoverable } (summary null = friends see only the name)
+    // row.avatar (a small JPEG data URL, or null) needs 20261107000000_friend_avatars.sql; until that's run the
+    // column is missing (PGRST204), so the rest is saved without it
     publish: async row => {
       const id = await uid();
       if (!id) throw { message: 'not_signed_in' };
-      const { error } = await sb().from('profiles_public').upsert({ user_id: id, ...row });
+      let { error } = await sb().from('profiles_public').upsert({ user_id: id, ...row });
+      if (error && 'avatar' in row && (error.code === 'PGRST204' || /avatar/.test(error.message || ''))) {
+        const { avatar, ...rest } = row;
+        ({ error } = await sb().from('profiles_public').upsert({ user_id: id, ...rest }));
+      }
       if (error) throw error;
     },
     mine: async () => {
@@ -42,7 +48,7 @@
     respond: (id, accept) => rpc('friend_respond', { p_from: id, p_accept: !!accept }),
     cancel: id => rpc('friend_cancel', { p_to: id }),
     remove: id => rpc('friend_remove', { p_other: id }),
-    // [{ user_id, nickname, summary, updated_at, since }]
+    // [{ user_id, nickname, summary, updated_at, since, avatar }] (avatar once the friend_avatars migration is in)
     list: () => rpc('friend_list'),
     // [{ user_id, nickname, incoming, created_at }]
     inbox: () => rpc('friend_inbox'),

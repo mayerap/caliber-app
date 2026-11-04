@@ -20,7 +20,12 @@
   const P = 'calibre:';
   const STATE_KEY = 'calibre-sync:state', DIRTY_KEY = 'calibre-sync:dirty';
   const IMPORT_KEY = 'calibre-sync:importResult', OFFER_KEY = 'calibre-sync:offerImport';
-  const EXCLUDE = new Set(['workout', '__cloudAt']);
+  // bwMeta: weigh-ins' extra fields (time, body fat, how it was measured, source) by date, kept in one app_state row
+  // beside the body_weight table, which holds only date and weight; merged back into 'bw' on the way down
+  const EXCLUDE = new Set(['workout', '__cloudAt', 'bwMeta']);
+  const BW_EXTRA = ['at', 'bf', 'bfm', 'src'];
+  const bwMetaOf = list => { const m = {}; list.forEach(e => { const x = {}; BW_EXTRA.forEach(k => { if (e[k] != null) x[k] = e[k]; }); if (Object.keys(x).length) m[e.date] = x; }); return m; };
+  const withMeta = (rows, meta) => rows.map(e => ({ ...e, ...((meta || {})[e.date] || {}) }));
   const TABLE_KEYS = new Set(['settings', 'logs', 'bw', 'food', 'photos']);
   const sb = () => window.caliberShell.supabase;
 
@@ -140,6 +145,7 @@
       }
       const gone = Object.keys(state.b).filter(d => !seen.has(d));
       for (const part of chunk(gone, 200)) { await q(sb().from('body_weight').delete().eq('user_id', user_id).in('date', part)); part.forEach(d => delete state.b[d]); }
+      if (changed.length || gone.length) await q(sb().from('app_state').upsert({ user_id, key: 'bwMeta', value: bwMetaOf(list) }, { onConflict: 'user_id,key' }).select('updated_at'));
       return;
     }
     if (k === 'photos') return pushPhotos(getJSON(k) || {}, user_id);
@@ -236,7 +242,8 @@
         const e = strip(r.payload); (food[r.date] = food[r.date] || []).push(e);
         next.f[r.id] = { h: H({ ...e, __date: r.date }), u: r.updated_at, s: r.payload.__seq || 0 }; });
       if (acc.food.length) setRaw('food', food);
-      const bw = acc.bw.map(r => ({ date: r.date, w: +r.lb })).sort((a, b) => a.date < b.date ? -1 : 1);
+      const meta = (acc.appState.find(r => r.key === 'bwMeta') || {}).value;
+      const bw = withMeta(acc.bw.map(r => ({ date: r.date, w: +r.lb })), meta).sort((a, b) => a.date < b.date ? -1 : 1);
       bw.forEach((e, i) => { next.b[e.date] = { h: H(e), u: acc.bw.find(r => r.date === e.date).updated_at }; });
       if (bw.length) setRaw('bw', bw);
       if (Object.keys(photos).length) { setRaw('photos', photos); Object.keys(photos).forEach(id => { next.ph[id] = 1; }); }
@@ -278,8 +285,9 @@
         const sv = acc.bw.map(r => ({ date: r.date, w: +r.lb, u: r.updated_at }));
         const changedBw = sv.some(e => state.b[e.date]?.u !== e.u) || Object.keys(state.b).length !== sv.length;
         if (changedBw) {
-          const bw = sv.map(({ u, ...e }) => e).sort((a, b) => a.date < b.date ? -1 : 1);
-          state.b = {}; sv.forEach(e => { state.b[e.date] = { h: H({ date: e.date, w: e.w }), u: e.u }; });
+          const meta = (acc.appState.find(r => r.key === 'bwMeta') || {}).value;
+          const bw = withMeta(sv.map(({ u, ...e }) => e), meta).sort((a, b) => a.date < b.date ? -1 : 1);
+          state.b = {}; sv.forEach(e => { state.b[e.date] = { h: H(bw.find(x => x.date === e.date)), u: e.u }; });
           setRaw('bw', bw); n++;
         }
       }
