@@ -8,8 +8,8 @@
 <link rel="icon" href="icon-32.png" sizes="32x32">
 <link href="fonts/fonts.css" rel="stylesheet">
 <!-- The owner's admin page (docs/admin.md). Uses the web app's own sign-in (same browser), and reads everything
-     through admin_overview() / admin_set_access() in supabase/migrations/20261104000000_admin.sql, which refuse
-     anyone not listed in public.admins. build-companion.mjs fills in the Supabase config below. -->
+     through admin_overview() / admin_set_access() in supabase/migrations/20261104000000_admin.sql, and the Help
+     section through admin_help() in 20261106000000_help_feedback.sql, which refuse anyone not listed in public.admins. build-companion.mjs fills in the Supabase config below. -->
 <style>
   :root {
     --bg:#F2F3F5; --surface:#FFFFFF; --raised:#F6F7F9; --line:#E1E4E9; --text:#161A21; --muted:#5F6775; --faint:#9AA1AD;
@@ -88,6 +88,14 @@
   .center a.primary { display: inline-block; text-decoration: none; border-radius: 10px; padding: 10px 18px; font-weight: 700; }
   .waitlist div { padding: 9px 16px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
   .waitlist div + div { border-top: 1px solid var(--line); }
+  .help-grid { display: grid; gap: 10px; }
+  @media (min-width: 720px) { .help-grid { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; } }
+  .help-row { padding: 10px 16px; display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 4px 14px; align-items: baseline; }
+  .help-row + .help-row { border-top: 1px solid var(--line); }
+  .help-row .yes { color: var(--good); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .help-row .no { color: var(--bad); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .help-row small { grid-column: 1 / -1; color: var(--muted); font-size: 13px; overflow-wrap: anywhere; }
+  .card-title { padding: 12px 16px 0; font-weight: 650; }
 </style>
 </head>
 <body>
@@ -121,7 +129,7 @@
     root.innerHTML = `<div class="card center"><h1>${esc(title)}</h1><p>${esc(text)}</p>${link ? `<a class="primary" href="${link[1]}">${esc(link[0])}</a>` : ''}</div>`;
   }
 
-  let data = null, sortKey = 'last_active', sortDir = -1, query = '';
+  let data = null, help = null, sortKey = 'last_active', sortDir = -1, query = '';
 
   async function load() {
     const { data: { session } } = await sb.auth.getSession();
@@ -135,6 +143,8 @@
       return centered('Can’t load', res.error.message || 'Check your connection and reload.');
     }
     data = res.data;
+    try { res = await sb.rpc('admin_help'); } catch (e) { res = { error: e }; }
+    help = res.error ? { error: `${res.error.code} ${res.error.message}` } : res.data;
     render(session);
   }
 
@@ -206,6 +216,9 @@
         <tbody id="tbody"></tbody>
       </table></div>
 
+      <h2>Help</h2>
+      ${helpSection()}
+
       <h2>Waitlist</h2>
       <div class="card waitlist">${data.waitlist.length ? data.waitlist.map(w => `<div><span>${esc(w.email)}</span><span class="muted">${esc(w.source || '')} · ${date(w.created_at)}</span></div>`).join('') : '<div class="empty">No one on the waitlist yet.</div>'}</div>
       <p class="note" style="margin-top:24px">Signed in as ${esc(session.user.email)}. This page is only visible to accounts on the admin list.</p>`;
@@ -217,6 +230,27 @@
       render(session);
     });
     root.querySelectorAll('.pending button').forEach(b => b.onclick = () => decide(b));
+  }
+
+  // "Did this answer your question?" answers and searches that found nothing (Profile → Help in the app)
+  const WHY = { screen: 'screen looks different', answer: 'didn’t answer the question', hard: 'hard to follow' };
+  const article = id => { const t = String(id).replace(/-/g, ' '); return t[0].toUpperCase() + t.slice(1); };
+  function helpSection() {
+    if (!help || help.error) return /PGRST202|admin_help/.test(help && help.error || '')
+      ? '<div class="card"><div class="empty">Not set up yet. Run supabase/migrations/20261106000000_help_feedback.sql.</div></div>'
+      : `<div class="card"><div class="empty">Can’t load help feedback: ${esc(help && help.error || 'unknown error')}</div></div>`;
+    const votes = help.articles.map(a => {
+      const why = Object.keys(WHY).filter(k => a[k]).map(k => `${a[k]} said ${WHY[k]}`);
+      const notes = a.notes.slice(0, 3).map(n => `“${esc(n.note)}”`);
+      return `<div class="help-row"><span>${esc(article(a.article))}</span><span class="yes">${a.yes_count} yes</span><span class="no">${a.no_count} no</span>
+        ${why.length || notes.length ? `<small>${[why.join(', '), notes.join(' ')].filter(Boolean).join(' · ')}</small>` : ''}</div>`;
+    }).join('');
+    const missed = help.no_match.map(m => `<div class="help-row"><span>${esc(m.query)}</span><span class="muted">${ago(m.last_at)}</span><span>${m.people} ${m.people === 1 ? 'person' : 'people'}</span></div>`).join('');
+    return `<p class="note">Last ${help.days} days, from people signed in. Each person’s latest answer per article counts.</p>
+      <div class="help-grid">
+        <div class="card"><div class="card-title">Did this answer your question?</div>${votes || '<div class="empty">No answers yet. They appear at the bottom of every help article.</div>'}</div>
+        <div class="card"><div class="card-title">Searches with no answer</div>${missed || '<div class="empty">None yet. When a search in Help finds nothing, it shows here.</div>'}</div>
+      </div>`;
   }
 
   function table() {
