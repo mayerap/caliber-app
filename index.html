@@ -557,8 +557,9 @@ textarea.notes{width:100%;min-height:90px;border-radius:12px;border:1px solid va
 .mchips{display:flex;flex-wrap:wrap;gap:6px;margin-top:14px}
 /* Session card flips over to a muscle map */
 .ov-flip{perspective:1400px;margin-top:12px}
-.ov-inner{display:grid;transition:transform .55s cubic-bezier(.3,.7,.2,1);transform-style:preserve-3d}
-.ov-inner > .ov{grid-area:1/1;margin-top:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+/* The card takes the height of the side showing (measured in SessionOverview), easing between them as it turns */
+.ov-inner{display:grid;transition:transform .55s cubic-bezier(.3,.7,.2,1),height .55s cubic-bezier(.3,.7,.2,1);transform-style:preserve-3d}
+.ov-inner > .ov{grid-area:1/1;align-self:start;margin-top:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
 .ov-back{transform:rotateY(180deg)}
 .ov-flip.flipped .ov-inner{transform:rotateY(180deg)}
 @media (prefers-reduced-motion:reduce){.ov-inner{transition:none}}
@@ -567,7 +568,7 @@ textarea.notes{width:100%;min-height:90px;border-radius:12px;border:1px solid va
 .body-map{display:flex;flex-direction:column;height:100%;padding-bottom:12px;--body-o:color-mix(in srgb,var(--text) 9%,var(--surface));--body-m:color-mix(in srgb,var(--text) 19%,var(--surface))}
 .body-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .body-head h2{margin:0;font-size:20px;white-space:nowrap}
-.body-grid{display:grid;grid-template-columns:1fr minmax(0,142px) 1fr;gap:4px;margin:8px 0 4px;flex:1;align-items:start}
+.body-grid{display:grid;grid-template-columns:minmax(84px,1fr) minmax(0,210px) minmax(84px,1fr);gap:4px;margin:8px 0 4px;flex:1;align-items:start}
 .body-fig{width:100%;height:auto;display:block}
 .body-o{fill:var(--body-o)}
 .body-m{fill:var(--body-m)}
@@ -606,6 +607,11 @@ textarea.notes{width:100%;min-height:90px;border-radius:12px;border:1px solid va
 .drag-list .row.pw-rest{padding-top:8px;padding-bottom:8px}
 .drag-list .row.pw-rest .row-title{color:var(--muted);font-weight:500}
 .pw-gap{width:36px;flex:none}
+/* Tags sit in one right-hand column ending at the same edge on every row; two tags stack instead of squeezing the title */
+.pw-tags{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex:none;margin-left:auto}
+.pw-tags:empty{display:none}
+.pw-tags .chip{min-width:62px;text-align:center}
+.pw-chev-gap{width:16px;flex:none}
 .pw-check{width:36px;height:36px;border-radius:10px;flex:none;display:grid;place-items:center;background:color-mix(in srgb,var(--p-green) 15%,transparent);color:var(--p-green)}
 .pw-check svg{width:18px;height:18px}
 .drag-list .row.pw-done .dow,.drag-list .row.pw-done .row-title{color:var(--faint)}
@@ -2906,6 +2912,14 @@ function lastOfDay(day, logs){
 }
 function SessionOverview({ day, warm, cool, units, label, onOpen, budget, time, core, logs, lighter, phase, onAll }){
   const [flipped, setFlipped] = useState(false);
+  // Each side's height, so the card fits the side showing instead of the taller one (the map side is much shorter)
+  const fRef = useRef(null), bRef = useRef(null), [hs, setHs] = useState(null);
+  React.useLayoutEffect(() => {
+    if(typeof ResizeObserver === 'undefined' || !fRef.current) return;
+    const ro = new ResizeObserver(() => fRef.current && bRef.current && setHs({ f:fRef.current.offsetHeight, b:bRef.current.offsetHeight }));
+    ro.observe(fRef.current); ro.observe(bRef.current);
+    return () => ro.disconnect();
+  }, []);
   // "Keep it all" hides the over-time note for this workout, today only
   const [kept, setKept] = useState(() => { const k = store.get('overKeep', null); return !!(k && k.date === localDate() && k.dayId === day.id); });
   const keep = () => { store.set('overKeep', { date:localDate(), dayId:day.id }); setKept(true); };
@@ -2935,8 +2949,8 @@ function SessionOverview({ day, warm, cool, units, label, onOpen, budget, time, 
     <span className="ovt-bar" role="img" aria-label=${parts.map((m, i) => m ? `${NAMES[i]} ${m} minutes` : '').filter(Boolean).join(', ')}>
       ${parts.map((m, i) => m > 0 && html`<i key=${i} style=${{ flexGrow:m, background:COL[i] }}></i>`)}</span>
     <span className="ovt-key">${parts.map((m, i) => m > 0 && html`<span key=${i}><i style=${{ background:COL[i] }}></i>${NAMES[i]} ${m}</span>`)}</span>`;
-  return html`<div className=${'ov-flip' + (flipped ? ' flipped' : '')}><div className="ov-inner">
-  <section className="ov" aria-label=${label || 'Today’s session'} aria-hidden=${flipped} inert=${flipped ? '' : undefined}>
+  return html`<div className=${'ov-flip' + (flipped ? ' flipped' : '')}><div className="ov-inner" style=${hs ? { height:`${flipped && hs.b ? hs.b : hs.f}px` } : null}>
+  <section className="ov" ref=${fRef} aria-label=${label || 'Today’s session'} aria-hidden=${flipped} inert=${flipped ? '' : undefined}>
     ${label && html`<div className="hero-label" style=${{marginBottom:10}}><span className="muted">${label}</span><b>${day.name}</b></div>`}
     ${time ? html`<button className="ovt" onClick=${time.onOpen} aria-label=${`Time today: about ${mins} minutes, ${over ? `${over} over your ${budget}` : `done around ${finishAt(mins)}`}. Change it.`}>${timeBody}</button>`
       : html`<div className="ovt">${timeBody}</div>`}
@@ -2979,7 +2993,7 @@ function SessionOverview({ day, warm, cool, units, label, onOpen, budget, time, 
     ${last && html`<p className="ov-last"><${Icon} name="history"/><span>Last ${day.name}: <b>${new Date(last.date + 'T12:00:00').toLocaleDateString('en-US', { weekday:'short', month:'short', day:'numeric' })}</b>${last.min ? ` · ${last.min} min` : ''}${last.prs ? ` · ${nOf(last.prs, 'PR')}` : ''}</span></p>`}
     ${(extra || test) && html`<p className="note" style=${{margin:'10px 2px 12px'}}>${test ? `Find your ${test.n.toLowerCase()} max today. ` : ''}${extra}${extra ? '.' : ''}</p>`}
   </section>
-  <section className="ov ov-back" aria-label="Muscles this session works" aria-hidden=${!flipped} inert=${flipped ? undefined : ''}>
+  <section className="ov ov-back" ref=${bRef} aria-label="Muscles this session works" aria-hidden=${!flipped} inert=${flipped ? undefined : ''}>
     ${flipped && html`<${MuscleMap} day=${day} logs=${logs} onBack=${() => setFlipped(false)}/>`}
   </section>
   </div></div>`;
@@ -3718,7 +3732,8 @@ function Program({ week, trip, units, setLifts, openSheet, imported, importWeek,
             const main = d.type === 'lift' ? topSet(d.session) : null, done = doneFor(d, i);
             if(d.type === 'rest' && !d.skipped && !done) return html`<span style=${{display:'contents'}}><span className="pw-gap"></span>
               <span className="row-main"><span className="row-title">Rest</span></span>
-              ${moved && moved[i] && html`<span className="chip pr">Moved</span>`}${i === ti && html`<span className="chip accent">Today</span>`}</span>`;
+              ${(moved && moved[i] || i === ti) && html`<span className="pw-tags">${moved && moved[i] && html`<span className="chip pr">Moved</span>`}${i === ti && html`<span className="chip accent">Today</span>`}</span>`}
+              <span className="pw-chev-gap"></span></span>`;
             const sub = d.skipped ? 'Skipped this week' : done ? doneLine(done, units).join(' · ') : d.type === 'lift'
               ? html`${main ? html`${shortLift(main.n)} ${toUnit(main.w, units)} ${units}${d.session.ex.some(e => e.prChance) && html`<${PrMark} label="A PR is scheduled"/>`}` : nOf(d.session.ex.length, 'exercise')} · ${sessionMinutes(d.session, warm, cool)} min${i === ti && dayArea(d.session) ? ` · ${dayArea(d.session)}` : ''}`
               : DAY_TYPES[d.type].label;
@@ -3727,10 +3742,12 @@ function Program({ week, trip, units, setLifts, openSheet, imported, importWeek,
                 <span className="row-title" style=${{display:'block'}}>${done && d.type === 'rest' ? done.name || 'Workout' : describeDay(d)}</span>
                 <span className="row-sub">${sub}</span>
               </span>
-              ${d.skipped && html`<span className="chip">Skipped</span>`}
-              ${moved && moved[i] && html`<span className="chip pr">Moved</span>`}
-              ${!d.skipped && d.session && d.session.travel && html`<span className="chip">Travel</span>`}
-              ${done ? html`<span className="chip done">Done</span>` : i === ti && html`<span className="chip accent">Today</span>`}
+              <span className="pw-tags">
+                ${d.skipped && html`<span className="chip">Skipped</span>`}
+                ${moved && moved[i] && html`<span className="chip pr">Moved</span>`}
+                ${!d.skipped && d.session && d.session.travel && html`<span className="chip">Travel</span>`}
+                ${done ? html`<span className="chip done">Done</span>` : i === ti && html`<span className="chip accent">Today</span>`}
+              </span>
               <${Icon} name="chev" className="chev"/></span>`;
           }}/>
         <p className="pw-hint"><${Icon} name="info"/>Tap a day to change it. Hold and drag to move it.</p>
@@ -8995,13 +9012,14 @@ function Logger({ ws, save, units, hist, msFor, onFinish, onDiscard, onMinimize,
   function check(ei, si){
     initAudio();
     const st = resumeInto(clone(ws)), ex = st.ex[ei], x = ex.sets[si];
-    if(x.done){ x.done = false; setRirAt(null); save(st); return; }
+    // _un / _dn: when it was unchecked / checked, so the iPhone's merge with the Watch keeps an uncheck (WorkoutSync.merge)
+    if(x.done){ x.done = false; x._un = Date.now(); setRirAt(null); save(st); return; }
     st.ssNext = null;
     const wv = x.w !== '' ? parseFloat(x.w) : (x.tw == null ? NaN : (x.tw === 0 ? 0 : du(x.tw)));
     if(isNaN(wv)){ setMsg({ ei, text:'Enter the weight you used.' }); return; }
     const rv = x.r !== '' ? parseInt(x.r, 10) : x.tr;
     if(!(rv >= 0)){ setMsg({ ei, text:'Enter how many reps you did.' }); return; }
-    x.w = String(wv); x.r = String(rv); x.wl = units === 'kg' ? wv / KG : wv; x.done = true;
+    x.w = String(wv); x.r = String(rv); x.wl = units === 'kg' ? wv / KG : wv; x.done = true; x._dn = Date.now();
     st.lastEi = ei; st.lastSi = si;   // where you are, for the Lock Screen (Engine.next in the iPhone app)
     const isTech = TECH_TYPES.includes(x.type);
     if(isWorkType(x.type)){ if(x.rir == null) x.rir = x.type === 'F' || x.type === 'A' ? 0 : ex.trir; if(!ex.noEffort) setRirAt(`${ei}:${si}`); resuggest(st, ei); }
