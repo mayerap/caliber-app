@@ -1,5 +1,7 @@
-// Caliber native shell: library requests (supabase/migrations/20261101000000_exercise_requests.sql). When someone adds
-// their own exercise and asks for it, calibre.html sends it here; the owner reviews them (docs/custom-exercises.md).
+// Caliber native shell: things people send the owner. Library requests (supabase/migrations/20261101000000_exercise_requests.sql):
+// when someone adds their own exercise and asks for it, calibre.html sends it here; the owner reviews them
+// (docs/custom-exercises.md). Help feedback (20261106000000_help_feedback.sql): "Was this helpful?" answers and searches
+// that found nothing, shown on the Admin page (docs/admin.md).
 (() => {
   const sb = () => window.caliberShell?.supabase;
 
@@ -22,6 +24,14 @@
       const { data, error } = await s.from('exercise_requests').select('name, status, library_id, reply').neq('status', 'new');
       if (error) throw error;
       return data || [];
+    },
+    // { kind: 'vote', article, helpful, reason, note } or { kind: 'no_match', query }; does nothing when signed out
+    help: async row => {
+      const s = sb();
+      const session = s && (await s.auth.getSession()).data.session;
+      if (!session) return;
+      const { error } = await s.from('help_feedback').insert(row);
+      if (error) throw error;
     },
   };
 })();
